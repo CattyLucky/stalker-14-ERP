@@ -1,11 +1,15 @@
 using System.Numerics;
 using Content.Shared.ActionBlocker;
 using Content.Shared.Chasm;
+using Content.Shared.Movement.Pulling.Components;
+using Content.Shared.Movement.Pulling.Systems;
 using Content.Shared.Throwing;
 using Content.Shared.Whitelist;
 using Robust.Shared.Audio.Systems;
 using Robust.Shared.Physics.Components;
 using Robust.Shared.Physics.Events;
+using Robust.Shared.Physics.Systems;
+using Robust.Shared.Player;
 using Robust.Shared.Random;
 using Robust.Shared.Timing;
 
@@ -17,11 +21,13 @@ public abstract class SharedRitualChasmSystem : EntitySystem
     [Dependency] private readonly IRobustRandom _robustRandom = default!;
     [Dependency] private readonly SharedTransformSystem _transformSystem = default!;
     [Dependency] private readonly SharedAudioSystem _audioSystem = default!;
+    [Dependency] private readonly SharedPhysicsSystem _physicsSystem = default!;
     [Dependency] private readonly EntityWhitelistSystem _entityWhitelistSystem = default!;
     [Dependency] private readonly ActionBlockerSystem _actionBlockerSystem = default!;
     [Dependency] private readonly ThrowingSystem _throwingSystem = default!;
+    [Dependency] private readonly PullingSystem _pullingSystem = default!;
 
-    protected static readonly TimeSpan FallTime = TimeSpan.FromSeconds(0.5d);
+    protected static readonly TimeSpan FallTime = TimeSpan.FromSeconds(1d);
     private EntityQuery<CreatedByRitualChasmComponent> _createdByRitualChasmQuery;
 
     private HashSet<EntityUid> _exitPoints = new();
@@ -34,7 +40,8 @@ public abstract class SharedRitualChasmSystem : EntitySystem
         SubscribeLocalEvent<RitualChasmExitPointComponent, ComponentShutdown>(OnExitShutdown);
 
         SubscribeLocalEvent<RitualChasmComponent, ComponentShutdown>(OnChasmShutdown);
-        SubscribeLocalEvent<RitualChasmComponent, StartCollideEvent>(OnCollide);
+        SubscribeLocalEvent<RitualChasmComponent, StartCollideEvent>(OnChasmStartCollide);
+        SubscribeLocalEvent<RitualChasmComponent, EndCollideEvent>(OnChasmEndCollide);
 
         _createdByRitualChasmQuery = GetEntityQuery<CreatedByRitualChasmComponent>();
     }
@@ -61,8 +68,8 @@ public abstract class SharedRitualChasmSystem : EntitySystem
         {
             // These both assume that fall time is always the same
 
-            if (ritualChasmComponent.ThrowBackStack.Count == 0 &&
-                ritualChasmComponent.ThrowBackStack.Peek().Item3 >= GameTiming.CurTime)
+            if (ritualChasmComponent.ThrowBackStack.Count != 0 &&
+                ritualChasmComponent.ThrowBackStack.Peek().Item3 < GameTiming.CurTime)
             {
                 var (maybeUid, direction, _) = ritualChasmComponent.ThrowBackStack.Pop();
                 if (maybeUid is not { } uid)
@@ -74,8 +81,8 @@ public abstract class SharedRitualChasmSystem : EntitySystem
                 _audioSystem.PlayPvs(ritualChasmComponent.ThrowSound, uid);
             }
 
-            if (ritualChasmComponent.FallStack.Count == 0 &&
-                ritualChasmComponent.FallStack.Peek().Item2 >= GameTiming.CurTime)
+            if (ritualChasmComponent.FallStack.Count != 0 &&
+                ritualChasmComponent.FallStack.Peek().Item2 < GameTiming.CurTime)
             {
                 var (uid, _) = ritualChasmComponent.FallStack.Pop();
 
@@ -85,7 +92,7 @@ public abstract class SharedRitualChasmSystem : EntitySystem
                     continue;
                 }
 
-                _audioSystem.PlayGlobal(ritualChasmComponent.RelocateSound, uid);
+                _audioSystem.PlayGlobal(ritualChasmComponent.RelocateSound, Filter.Broadcast(), true);
                 if (_exitPoints.Count == 0)
                 {
                     PredictedQueueDel(uid);
@@ -93,13 +100,32 @@ public abstract class SharedRitualChasmSystem : EntitySystem
                     continue;
                 }
 
+                RemComp<ChasmFallingComponent>(uid);
+                _actionBlockerSystem.UpdateCanMove(uid);
+
+                StopPulling(uid);
                 _transformSystem.SetCoordinates(uid, Transform(_robustRandom.Pick(_exitPoints)).Coordinates);
+
+                // play only for the relocated
+                _audioSystem.PlayGlobal(ritualChasmComponent.RelocatedLocalSound, uid);
             }
         }
     }
 
-    private void OnCollide(Entity<RitualChasmComponent> entity, ref StartCollideEvent args)
+    private void StopPulling(EntityUid uid)
     {
+        if (TryComp<PullableComponent>(uid, out var pullableComponent) && _pullingSystem.IsPulled(uid, pullableComponent))
+            _pullingSystem.TryStopPull(uid, pullableComponent);
+
+        if (TryComp<PullerComponent>(uid, out var pullerComponent) && TryComp<PullableComponent>(pullerComponent.Pulling, out var pullable))
+            _pullingSystem.TryStopPull(pullerComponent.Pulling.Value, pullable);
+    }
+
+    private void OnChasmStartCollide(Entity<RitualChasmComponent> entity, ref StartCollideEvent args)
+    {
+        if (HasComp<DontStartCollideWithRitualChasmOnceComponent>(args.OtherEntity))
+            return;
+
         // already doomed
         if (HasComp<ChasmFallingComponent>(args.OtherEntity))
             return;
@@ -107,22 +133,20 @@ public abstract class SharedRitualChasmSystem : EntitySystem
         OnHit(entity, args.OtherEntity);
     }
 
+    private void OnChasmEndCollide(Entity<RitualChasmComponent> entity, ref EndCollideEvent args)
+    {
+        if (TryComp<DontStartCollideWithRitualChasmOnceComponent>(args.OtherEntity, out var dontCollideComponent))
+            RemComp(args.OtherEntity, dontCollideComponent);
+    }
+
     private void OnHit(Entity<RitualChasmComponent> entity, EntityUid fallingUid)
     {
-        if (_createdByRitualChasmQuery.HasComponent(entity) ||
-            (MetaData(fallingUid).EntityPrototype is { } fallingEntProto && fallingEntProto == entity.Comp.RewardedEntityProtoId))
-        {
-            // throw back at equal speed but not too slow
-            if (TryComp<PhysicsComponent>(fallingUid, out var physicsComponent))
-                _throwingSystem.TryThrow(entity, -GetUnitVectorFrom(entity.Owner, fallingUid), baseThrowSpeed: Math.Max(physicsComponent.LinearVelocity.Length(), 8f));
-
-            return;
-        }
-
         if (_entityWhitelistSystem.IsWhitelistPass(entity.Comp.PunishedEntities, fallingUid))
         {
             PunishEntity(fallingUid);
-            _throwingSystem.TryThrow(entity, -GetUnitVectorFrom(entity.Owner, fallingUid), baseThrowSpeed: entity.Comp.ThrowForce * 2f);
+
+            _audioSystem.PlayPvs(entity.Comp.ThrowSound, entity.Owner);
+            _throwingSystem.TryThrow(fallingUid, -GetUnitVectorFrom(entity.Owner, fallingUid), baseThrowSpeed: entity.Comp.ThrowForce);
 
             return;
         }
@@ -131,7 +155,12 @@ public abstract class SharedRitualChasmSystem : EntitySystem
     }
 
     protected Vector2 GetUnitVectorFrom(EntityUid from, EntityUid to)
-        => Vector2.Normalize(_transformSystem.GetWorldPosition(from) - _transformSystem.GetWorldPosition(to));
+    {
+        var vector = _transformSystem.GetWorldPosition(from) - _transformSystem.GetWorldPosition(to);
+
+        Vector2Helpers.Normalize(ref vector);
+        return vector;
+    }
 
     private void MakeEntityEternallyFall(EntityUid uid, Entity<RitualChasmComponent> ritualChasmEntity)
     {
@@ -145,6 +174,9 @@ public abstract class SharedRitualChasmSystem : EntitySystem
 
         ritualChasmEntity.Comp.FallStack.Push((uid, GameTiming.CurTime + FallTime));
         HandleReturnedEntity(uid, ritualChasmEntity);
+
+        _physicsSystem.SetLinearVelocity(uid, Vector2.Zero);
+        _transformSystem.SetCoordinates(uid, Transform(ritualChasmEntity.Owner).Coordinates);
     }
 
     protected abstract void PunishEntity(EntityUid uid);

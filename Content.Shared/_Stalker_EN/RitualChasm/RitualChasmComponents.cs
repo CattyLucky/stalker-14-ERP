@@ -1,6 +1,7 @@
 using System.Numerics;
 using Content.Shared.Whitelist;
 using Robust.Shared.Audio;
+using Robust.Shared.GameStates;
 using Robust.Shared.Prototypes;
 
 namespace Content.Shared._Stalker_EN.RitualChasm;
@@ -9,7 +10,7 @@ namespace Content.Shared._Stalker_EN.RitualChasm;
 ///     Chasm that accepts artifacts in return for
 ///         reward that matches with tier
 /// </summary>
-[RegisterComponent]
+[RegisterComponent, NetworkedComponent]
 public sealed partial class RitualChasmComponent : Component
 {
     [DataField, ViewVariables(VVAccess.ReadWrite)]
@@ -42,6 +43,13 @@ public sealed partial class RitualChasmComponent : Component
     public SoundSpecifier? RelocateSound = null;
 
     /// <summary>
+    ///     Sound played, only for something being relocated,
+    ///         when it is being relocated.
+    /// </summary>
+    [DataField, ViewVariables(VVAccess.ReadWrite)]
+    public SoundSpecifier? RelocatedLocalSound = null;
+
+    /// <summary>
     ///     If an entity is falling, it will be
     ///         relocated to somewherever when entering the chasm.
     ///         Otherwise the thing will just be deleted.
@@ -70,11 +78,14 @@ public sealed partial class RitualChasmComponent : Component
     public List<EntityUid> EntitiesPendingThrowBack = new();
 }
 
-[RegisterComponent]
+[RegisterComponent, NetworkedComponent]
 public sealed partial class CreatedByRitualChasmComponent : Component;
+
+[RegisterComponent, NetworkedComponent]
+public sealed partial class DontStartCollideWithRitualChasmOnceComponent : Component;
 
 /// <summary>
 ///     Exit point for things relocated by ritual chasm
 /// </summary>
-[RegisterComponent]
+[RegisterComponent, NetworkedComponent]
 public sealed partial class RitualChasmExitPointComponent : Component;

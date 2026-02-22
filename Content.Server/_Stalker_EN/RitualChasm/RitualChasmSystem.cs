@@ -87,7 +87,7 @@ public sealed class RitualChasmSystem : SharedRitualChasmSystem
         for (; rewardedEntityCount != 0; --rewardedEntityCount)
         {
             var spawnedUid = Spawn(ritualChasmEntity.Comp.RewardedEntityProtoId);
-            EnsureComp<CreatedByRitualChasmComponent>(spawnedUid);
+            EnsureComp<DontStartCollideWithRitualChasmOnceComponent>(spawnedUid);
             ritualChasmEntity.Comp.EntitiesPendingThrowBack.Add(spawnedUid);
 
             ritualChasmEntity.Comp.ThrowBackStack.Push((
