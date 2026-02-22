@@ -115,7 +115,7 @@ public sealed class TeethPullingSystem : EntitySystem
         EnsureAccent(ent);
     }
 
-    private void EnsureAccent(Entity<TeethPullComponent> ent)
+    public /* ST14-EN RitualChasm: made this public */ void EnsureAccent(Entity<TeethPullComponent> ent)
     {
         // Get registration of our component and return if that comp is already on our ent
         var compType = _componentFactory.GetRegistration(ent.Comp.AccentComp).Type;
@@ -123,7 +123,7 @@ public sealed class TeethPullingSystem : EntitySystem
             return;
 
         // Apply our component
-        var accentComponent = (Component) _componentFactory.GetComponent(compType);
+        var accentComponent = (Component)_componentFactory.GetComponent(compType);
         AddComp(ent, accentComponent);
     }
 }
