@@ -616,5 +616,12 @@
   id: 69
   time: '2026-02-22T15:21:40.631205+00:00'
   url: https://github.com/coolmankid12345/stalker-14-EN/pull/485
+- author: teecoding
+  changes:
+  - message: Fixed black screen when reconnecting after disconnecting in stash
+    type: Fix
+  id: 70
+  time: '2026-02-22T15:23:03.308236+00:00'
+  url: https://github.com/coolmankid12345/stalker-14-EN/pull/486
 Name: Stalker
 Order: -1
