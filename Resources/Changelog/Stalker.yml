@@ -684,5 +684,14 @@
   id: 77
   time: '2026-02-22T22:45:43.094697+00:00'
   url: https://github.com/coolmankid12345/stalker-14-EN/pull/495
+- author: crocodilecarousel
+  changes:
+  - message: Artifacts changed
+    type: Tweak
+  - message: New artifacts sellable to shops
+    type: Add
+  id: 78
+  time: '2026-02-22T22:47:11.486177+00:00'
+  url: https://github.com/coolmankid12345/stalker-14-EN/pull/496
 Name: Stalker
 Order: -1
