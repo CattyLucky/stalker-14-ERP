@@ -6,5 +6,5 @@
   suffix: ST, Mapping
   components:
     - type: Sprite
-      sprite: _Stalker/_Stalker_EN/Structures/Monuments/ritualtower.rsi
-      state: idle
+      sprite: /Textures/_Stalker_EN/Structures/Monuments/ritualtower.rsi
+      state: ritualtower

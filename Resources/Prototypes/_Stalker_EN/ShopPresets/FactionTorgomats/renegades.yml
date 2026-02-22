@@ -208,7 +208,7 @@
       ClothingOuterArmorRCBZRene: 2000 # T2 - ENV
       ClothingOuterArmorZaryaRene: 1500 # T2 - PVE
       ClothingOuterArmorRenegate: 11000 # T3
-      STClothingOuterArmorLightPlateVestBasePSZ7rene: 12000 # T3 - PVP
+      # STClothingOuterArmorLightPlateVestBasePSZ7rene: 12000 # T3 - PVP ST-EN: Moved to Zealot
       ClothingOuterArmorSevarenegat: 4000 # T3 - PVE
 
   - name: shop-category-storage-and-containers
@@ -376,3 +376,60 @@
       ClothingShoesBootsMerc: 30
       ClothingShoesSwat: 35
       ClothingShoesBootsCombat: 30
+
+- type: shopPreset
+  id: ZealotTrader
+  # minSellPrice: 0
+  # itemsForSale:
+  categories:
+  - name: shop-category-weapons
+    priority: 1
+    items:
+      # 5,45x39
+      STWeaponRifleAKS74U: 3
+      STWeaponRifleAKS74: 6
+      # SMGS
+      STWeaponSMGPPSh41: 5
+      STWeaponSMGMP5: 4
+      # 7,62x39
+      STWeaponRifleAKMC: 10 # Worse AKM version for cheaper
+      STWeaponSniperSKS: 3
+  - name: shop-category-magazines
+    priority: 2
+    items:
+      739Mag30: 1
+  - name: shop-category-ammunition
+    priority: 3
+    items:
+      # 7.25
+      725PSTBox: 3 # T3
+      # 9.19
+      919PBMBox: 3 # T3
+      # 9.18
+      918PBMBox: 3 # T3
+      # 5.45
+      545PCBox: 3 # T3
+      # 7.39
+      739FMJBox: 4 # T3
+      # 7.54
+      754FMJBox: 4 # T3
+      # .45
+      45ACPAPBox: 4 # T3
+  - name: shop-category-medicine
+    priority: 4
+    items:
+      MedkitElite: 2
+  - name: shop-category-armor
+    priority: 6
+    items:
+      # ARMOR
+      STClothingOuterArmorLightPlateVestBasePSZ7rene: 22
+  # - name: shop-category-storage-and-containers
+  #   priority: 7
+  #   items:
+
+
+
+
+
+
