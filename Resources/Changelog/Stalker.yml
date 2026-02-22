@@ -635,5 +635,13 @@
   id: 71
   time: '2026-02-22T15:27:07.873988+00:00'
   url: https://github.com/coolmankid12345/stalker-14-EN/pull/487
+- author: teecoding
+  changes:
+  - message: Zone colors in the guidebook rules page now display correctly instead
+      of showing raw markup text
+    type: Fix
+  id: 72
+  time: '2026-02-22T15:30:04.839860+00:00'
+  url: https://github.com/coolmankid12345/stalker-14-EN/pull/489
 Name: Stalker
 Order: -1
