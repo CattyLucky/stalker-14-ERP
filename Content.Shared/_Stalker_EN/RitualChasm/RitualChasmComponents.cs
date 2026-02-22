@@ -50,6 +50,12 @@ public sealed partial class RitualChasmComponent : Component
     public SoundSpecifier? RelocatedLocalSound = null;
 
     /// <summary>
+    ///     Locale for popup shown for thing being relocated.
+    /// </summary>
+    [DataField, ViewVariables(VVAccess.ReadWrite)]
+    public string? RelocatedLocalPopup = null;
+
+    /// <summary>
     ///     If an entity is falling, it will be
     ///         relocated to somewherever when entering the chasm.
     ///         Otherwise the thing will just be deleted.
@@ -63,13 +69,13 @@ public sealed partial class RitualChasmComponent : Component
     /// <summary>
     ///     Things currently falling into the chasm, and their expected time of total descent.
     /// </summary>
-    public Stack<(EntityUid, TimeSpan)> FallStack = new();
+    public Queue<(EntityUid, TimeSpan)> FallQueue = new();
 
     /// <summary>
     ///     It is assumed that first entity to leave will have lowest time-value,
     ///         and last to leave will have highest time-value, in order
     /// </summary>
-    public Stack<(EntityUid?, Vector2, TimeSpan)> ThrowBackStack = new();
+    public Queue<(EntityUid?, Vector2, TimeSpan)> ThrowBackQueue = new();
 
     /// <summary>
     ///    Entities that are currently pending to be thrown back by the chasm, which

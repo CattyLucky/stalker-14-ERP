@@ -3,10 +3,10 @@ using Content.Shared.ActionBlocker;
 using Content.Shared.Chasm;
 using Content.Shared.Movement.Pulling.Components;
 using Content.Shared.Movement.Pulling.Systems;
+using Content.Shared.Popups;
 using Content.Shared.Throwing;
 using Content.Shared.Whitelist;
 using Robust.Shared.Audio.Systems;
-using Robust.Shared.Physics.Components;
 using Robust.Shared.Physics.Events;
 using Robust.Shared.Physics.Systems;
 using Robust.Shared.Player;
@@ -22,6 +22,7 @@ public abstract class SharedRitualChasmSystem : EntitySystem
     [Dependency] private readonly SharedTransformSystem _transformSystem = default!;
     [Dependency] private readonly SharedAudioSystem _audioSystem = default!;
     [Dependency] private readonly SharedPhysicsSystem _physicsSystem = default!;
+    [Dependency] private readonly SharedPopupSystem _popupSystem = default!;
     [Dependency] private readonly EntityWhitelistSystem _entityWhitelistSystem = default!;
     [Dependency] private readonly ActionBlockerSystem _actionBlockerSystem = default!;
     [Dependency] private readonly ThrowingSystem _throwingSystem = default!;
@@ -68,10 +69,10 @@ public abstract class SharedRitualChasmSystem : EntitySystem
         {
             // These both assume that fall time is always the same
 
-            if (ritualChasmComponent.ThrowBackStack.Count != 0 &&
-                ritualChasmComponent.ThrowBackStack.Peek().Item3 < GameTiming.CurTime)
+            if (ritualChasmComponent.ThrowBackQueue.Count != 0 &&
+                ritualChasmComponent.ThrowBackQueue.Peek().Item3 < GameTiming.CurTime)
             {
-                var (maybeUid, direction, _) = ritualChasmComponent.ThrowBackStack.Pop();
+                var (maybeUid, direction, _) = ritualChasmComponent.ThrowBackQueue.Dequeue();
                 if (maybeUid is not { } uid)
                     continue;
 
@@ -81,10 +82,10 @@ public abstract class SharedRitualChasmSystem : EntitySystem
                 _audioSystem.PlayPvs(ritualChasmComponent.ThrowSound, uid);
             }
 
-            if (ritualChasmComponent.FallStack.Count != 0 &&
-                ritualChasmComponent.FallStack.Peek().Item2 < GameTiming.CurTime)
+            if (ritualChasmComponent.FallQueue.Count != 0 &&
+                ritualChasmComponent.FallQueue.Peek().Item2 < GameTiming.CurTime)
             {
-                var (uid, _) = ritualChasmComponent.FallStack.Pop();
+                var (uid, _) = ritualChasmComponent.FallQueue.Dequeue();
 
                 if (!_entityWhitelistSystem.IsWhitelistPass(ritualChasmComponent.RelocatableEntities, uid))
                 {
@@ -108,6 +109,7 @@ public abstract class SharedRitualChasmSystem : EntitySystem
 
                 // play only for the relocated
                 _audioSystem.PlayGlobal(ritualChasmComponent.RelocatedLocalSound, uid);
+                _popupSystem.PopupClient(ritualChasmComponent.RelocatedLocalPopup, uid, uid, PopupType.LargeCaution);
             }
         }
     }
@@ -172,7 +174,7 @@ public abstract class SharedRitualChasmSystem : EntitySystem
         AddComp(uid, fallingComponent);
         _actionBlockerSystem.UpdateCanMove(uid);
 
-        ritualChasmEntity.Comp.FallStack.Push((uid, GameTiming.CurTime + FallTime));
+        ritualChasmEntity.Comp.FallQueue.Enqueue((uid, GameTiming.CurTime + FallTime));
         HandleReturnedEntity(uid, ritualChasmEntity);
 
         _physicsSystem.SetLinearVelocity(uid, Vector2.Zero);

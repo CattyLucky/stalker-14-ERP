@@ -17,11 +17,12 @@
       collection: StalkerHorrorSound
     relocatedLocalSound:
       params:
-        volume: 1
-        pitch: 0.75
+        volume: 5
+        pitch: 0.5
       path: /Audio/Effects/Gasp/gasp_male2.ogg
-    throwForce: 25
-    rewardedPerTier: 1.6
+    relocatedLocalPopup: ritual-chasm-relocated-popup
+    throwForce: 15
+    rewardedPerTier: 1.25
     rewardedPerTooth: 1.75
     relocatableEntities:
       components:

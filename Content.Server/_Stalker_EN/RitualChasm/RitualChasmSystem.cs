@@ -21,7 +21,7 @@ public sealed class RitualChasmSystem : SharedRitualChasmSystem
         _emissionLightningSystem.SpawnLightningImmediately(
             "EmissionLightningEffect",
             _transformSystem.GetMapCoordinates(uid),
-            _emissionLightningSystem.LightningTargetAndSafePredicate,
+            _emissionLightningSystem.LightningTargetPredicate,
             boltRange: 6f,
             boltCount: 6
         );
@@ -75,9 +75,6 @@ public sealed class RitualChasmSystem : SharedRitualChasmSystem
 
     protected override void HandleReturnedEntity(EntityUid uid, Entity<RitualChasmComponent> ritualChasmEntity)
     {
-        if (!TryGetArtifactTier(uid, out var tier))
-            return;
-
         var outDirection = -GetUnitVectorFrom(ritualChasmEntity.Owner, uid);
 
         var initialTime = GameTiming.CurTime + FallTime;
@@ -90,13 +87,13 @@ public sealed class RitualChasmSystem : SharedRitualChasmSystem
             EnsureComp<DontStartCollideWithRitualChasmOnceComponent>(spawnedUid);
             ritualChasmEntity.Comp.EntitiesPendingThrowBack.Add(spawnedUid);
 
-            ritualChasmEntity.Comp.ThrowBackStack.Push((
+            ritualChasmEntity.Comp.ThrowBackQueue.Enqueue((
                 spawnedUid, // spawn in nullspace for now, will be teleported back to chasm LATER
                 outDirection,
                 initialTime + accumulatedTime
             ));
 
-            accumulatedTime += TimeSpan.FromSeconds(0.5f); // ST14-EN: Arbitrary delay between each throw back, can be tweaked later
+            accumulatedTime += TimeSpan.FromSeconds(1.5f); // ST14-EN: Arbitrary delay between each throw back, can be tweaked later
         }
 
         return;
