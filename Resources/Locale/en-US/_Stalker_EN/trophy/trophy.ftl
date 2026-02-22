@@ -1,5 +1,6 @@
 st-trophy-examine-quality = [color={$color}]{$quality}[/color]
 st-trophy-examine-weight = Specimen weight: {$weight} kg
+st-trophy-examine-weight-unknown = Specimen weight: Unknown
 
 st-trophy-quality-common = Standard
 st-trophy-quality-uncommon = Adapted
