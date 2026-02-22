@@ -623,5 +623,17 @@
   id: 70
   time: '2026-02-22T15:23:03.308236+00:00'
   url: https://github.com/coolmankid12345/stalker-14-EN/pull/486
+- author: teecoding
+  changes:
+  - message: Inserting clothing into your personal stash now automatically stores
+      items from dependent slots (suit storage, pockets) instead of dropping them
+      on the ground
+    type: Fix
+  - message: Clicking the stash with an item in hand now correctly updates the stash
+      UI instead of showing a ghost entry in "Your Items"
+    type: Fix
+  id: 71
+  time: '2026-02-22T15:27:07.873988+00:00'
+  url: https://github.com/coolmankid12345/stalker-14-EN/pull/487
 Name: Stalker
 Order: -1
