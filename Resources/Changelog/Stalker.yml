@@ -608,5 +608,13 @@
   id: 68
   time: '2026-02-22T15:19:54.279511+00:00'
   url: https://github.com/coolmankid12345/stalker-14-EN/pull/484
+- author: teecoding
+  changes:
+  - message: Trophy specimen weight now correctly shows the source mob's weight instead
+      of the trophy item's own weight
+    type: Fix
+  id: 69
+  time: '2026-02-22T15:21:40.631205+00:00'
+  url: https://github.com/coolmankid12345/stalker-14-EN/pull/485
 Name: Stalker
 Order: -1
