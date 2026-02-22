@@ -665,5 +665,13 @@
   id: 75
   time: '2026-02-22T19:53:43.936562+00:00'
   url: https://github.com/coolmankid12345/stalker-14-EN/pull/493
+- author: teecoding
+  changes:
+  - message: Handheld radio now uses a split frequency input (XXX.Y) matching the
+      radio headset, with a default frequency of 120.0
+    type: Tweak
+  id: 76
+  time: '2026-02-22T20:00:49.956980+00:00'
+  url: https://github.com/coolmankid12345/stalker-14-EN/pull/492
 Name: Stalker
 Order: -1
