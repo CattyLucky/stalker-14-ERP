@@ -601,5 +601,12 @@
   id: 67
   time: '2026-02-21T23:28:30.046154+00:00'
   url: https://github.com/coolmankid12345/stalker-14-EN/pull/480
+- author: TheOverwatchVoice
+  changes:
+  - message: Changes the monolith base in limansk
+    type: Add
+  id: 68
+  time: '2026-02-22T15:19:54.279511+00:00'
+  url: https://github.com/coolmankid12345/stalker-14-EN/pull/484
 Name: Stalker
 Order: -1
