@@ -673,5 +673,16 @@
   id: 76
   time: '2026-02-22T20:00:49.956980+00:00'
   url: https://github.com/coolmankid12345/stalker-14-EN/pull/492
+- author: teecoding
+  changes:
+  - message: PDA direct messages now reliably deliver to recipients
+    type: Fix
+  - message: PDA direct message recipients now receive a notification sound
+    type: Fix
+  - message: Sent direct messages are now visible in the sender's message list
+    type: Fix
+  id: 77
+  time: '2026-02-22T22:45:43.094697+00:00'
+  url: https://github.com/coolmankid12345/stalker-14-EN/pull/495
 Name: Stalker
 Order: -1
