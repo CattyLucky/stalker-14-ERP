@@ -643,5 +643,12 @@
   id: 72
   time: '2026-02-22T15:30:04.839860+00:00'
   url: https://github.com/coolmankid12345/stalker-14-EN/pull/489
+- author: teecoding
+  changes:
+  - message: Dog tags now show the owner's name and age when examined
+    type: Add
+  id: 73
+  time: '2026-02-22T15:32:59.649838+00:00'
+  url: https://github.com/coolmankid12345/stalker-14-EN/pull/490
 Name: Stalker
 Order: -1
