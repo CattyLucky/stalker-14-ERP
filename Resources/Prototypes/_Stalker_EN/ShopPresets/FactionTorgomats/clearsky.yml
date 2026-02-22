@@ -6,6 +6,11 @@
     ZoneArtifactFireball: 540
     ZoneArtifactEye: 810
     ZoneArtifactFlame: 1620
+    ZoneArtifactBunch: 1890
+    ZoneArtifactRock: 1620
+    ZoneArtifactSun: 2950
+    ZoneArtifactRoot: 3240
+    ZoneArtifactConflagration: 810
     # Thermal group - 2
     ZoneArtifactCristall: 3240
     ZoneArtifactLithosphere: 6480
@@ -13,6 +18,9 @@
     ZoneArtifactSparkler: 540
     ZoneArtifactBattery: 810
     ZoneArtifactFlash: 1620
+    ZoneArtifactAccumulator: 1620
+    ZoneArtifactDiamond: 2950
+    ZoneArtifactCharger: 2950
     ArtMoon: 3240
     ZoneArtifactTesla: 4860
     ZoneArtifactIce: 6480
@@ -24,6 +32,7 @@
     ZoneArtifactPebble: 540
     ZoneArtifactRosin: 810
     ZoneArtifactStoneCube: 1215
+    ZoneArtifactDarkCube: 4860
     # Gravity group - 2
     ZoneArtifactVyvert: 540
     ZoneArtifactAmoeba: 810
@@ -35,8 +44,14 @@
     ZoneArtifactStuntman: 6480
     ZoneArtifactDistorter: 6480
     ZoneArtifactSoul: 4860
+    ZoneArtifactCompass: 3600
+    ZoneArtifactCrucifix: 4250
+    ZoneArtifactThorn: 2550
+    ZoneArtifactArf: 810
 
     # Acidic group - 1
+    ZoneArtifactToxic: 650
+    ZoneArtifactCytoplasm: 3200
     ZoneArtifactBlood: 1600
     ZoneArtifactMeat: 3200
     ZoneArtifactKolobok: 4800
