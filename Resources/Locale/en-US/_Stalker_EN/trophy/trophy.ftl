@@ -45,6 +45,7 @@ st-mob-variant-legendary-bloodsucker = Singular Bloodsucker
 
 st-mob-variant-uncommon-bear-t1 = Adapted Young Bear
 st-mob-variant-rare-bear-t1 = Mutated Young Bear
+st-mob-variant-rare-bear-t1 = Mutated Young Bear
 st-mob-variant-legendary-bear-t1 = Singular Young Bear
 
 st-mob-variant-uncommon-bear-t2 = Adapted Mature Bear
@@ -63,10 +64,6 @@ st-mob-variant-uncommon-cat = Adapted Bayun
 st-mob-variant-rare-cat = Mutated Bayun
 st-mob-variant-legendary-cat = Singular Bayun
 
-st-mob-variant-uncommon-spider = Adapted Spider
-st-mob-variant-rare-spider = Mutated Spider
-st-mob-variant-legendary-spider = Singular Spider
-
 st-mob-variant-uncommon-rodent = Adapted Rodent
 st-mob-variant-rare-rodent = Mutated Rodent
 st-mob-variant-legendary-rodent = Singular Rodent
@@ -75,10 +72,6 @@ st-mob-variant-uncommon-rat = Adapted Rat
 st-mob-variant-rare-rat = Mutated Rat
 st-mob-variant-legendary-rat = Singular Rat
 
-st-mob-variant-uncommon-bush = Adapted Bush
-st-mob-variant-rare-bush = Mutated Bush
-st-mob-variant-legendary-bush = Singular Bush
-
 st-mob-variant-uncommon-leshiy = Adapted Leshiy
 st-mob-variant-rare-leshiy = Mutated Leshiy
 st-mob-variant-legendary-leshiy = Singular Leshiy
@@ -86,22 +79,6 @@ st-mob-variant-legendary-leshiy = Singular Leshiy
 st-mob-variant-uncommon-seer = Adapted Seer
 st-mob-variant-rare-seer = Mutated Seer
 st-mob-variant-legendary-seer = Singular Seer
-
-st-mob-variant-uncommon-poltergeist-fire = Adapted Poltergeist
-st-mob-variant-rare-poltergeist-fire = Mutated Poltergeist
-st-mob-variant-legendary-poltergeist-fire = Singular Poltergeist
-
-st-mob-variant-uncommon-poltergeist-elec = Adapted Poltergeist
-st-mob-variant-rare-poltergeist-elec = Mutated Poltergeist
-st-mob-variant-legendary-poltergeist-elec = Singular Poltergeist
-
-st-mob-variant-uncommon-poltergeist-ice = Adapted Poltergeist
-st-mob-variant-rare-poltergeist-ice = Mutated Poltergeist
-st-mob-variant-legendary-poltergeist-ice = Singular Poltergeist
-
-st-mob-variant-uncommon-poltergeist-rave = Adapted Poltergeist
-st-mob-variant-rare-poltergeist-rave = Mutated Poltergeist
-st-mob-variant-legendary-poltergeist-rave = Singular Poltergeist
 
 st-mob-variant-uncommon-zombie = Adapted Zombie
 st-mob-variant-rare-zombie = Mutated Zombie
@@ -134,10 +111,6 @@ st-mob-variant-legendary-chimera = Singular Chimera
 st-mob-variant-uncommon-izlom = Adapted Izlom
 st-mob-variant-rare-izlom = Mutated Izlom
 st-mob-variant-legendary-izlom = Singular Izlom
-
-st-mob-variant-uncommon-apparition = Adapted Apparition
-st-mob-variant-rare-apparition = Mutated Apparition
-st-mob-variant-legendary-apparition = Singular Apparition
 
 st-mob-variant-uncommon-rogonosets = Adapted Rogonosets
 st-mob-variant-rare-rogonosets = Mutated Rogonosets
