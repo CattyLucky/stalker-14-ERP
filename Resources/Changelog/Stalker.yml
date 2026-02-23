@@ -708,5 +708,16 @@
   id: 80
   time: '2026-02-23T12:25:13.562048+00:00'
   url: https://github.com/coolmankid12345/stalker-14-EN/pull/500
+- author: teecoding
+  changes:
+  - message: Mobs from proximity triggers now spawn at the correct distance instead
+      of failing or appearing at the trigger location
+    type: Fix
+  - message: Proximity mob triggers now re-activate after cooldown even if the player
+      is standing still nearby
+    type: Fix
+  id: 81
+  time: '2026-02-23T20:32:47.677647+00:00'
+  url: https://github.com/coolmankid12345/stalker-14-EN/pull/504
 Name: Stalker
 Order: -1
