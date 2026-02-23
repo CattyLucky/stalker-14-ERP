@@ -94,7 +94,8 @@ public sealed partial class STAnomalyGeneratorSystem : EntitySystem
         _jobs.Clear();
     }
 
-    private async Task<STAnomalyGenerationJobData> StartGeneration(MapId mapId, STAnomalyGenerationOptions options)
+    // stalker-en-changes: made public for emission anomaly regeneration
+    public async Task<STAnomalyGenerationJobData> StartGeneration(MapId mapId, STAnomalyGenerationOptions options)
     {
         var cancelToken = new CancellationTokenSource();
         var job = new STAnomalyGenerationJob(options with { MapId = mapId }, JobTime, cancelToken.Token);
@@ -119,7 +120,8 @@ public sealed partial class STAnomalyGeneratorSystem : EntitySystem
         return job.Result!;
     }
 
-    private void ClearGeneration(MapId mapId)
+    // stalker-en-changes: made public for emission anomaly regeneration
+    public void ClearGeneration(MapId mapId)
     {
         if (!Data.Comp.MapGeneratedAnomalies.TryGetValue(mapId, out var anomalies))
             return;
