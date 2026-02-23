@@ -387,7 +387,10 @@ public sealed class StalkerRepositorySystem : EntitySystem
         _adminLogger.Add(LogType.Action, LogImpact.Low, $"Player {Name(args.User):user} inserted 1 {itemInfo.Name} into repository");
         _stalkerStorageSystem.SaveStorage(component);
         RaiseLocalEvent(args.User, new RepositoryItemInjectedEvent(args.Target, itemInfo));
-        UpdateUiState(args.User, uid, component);
+        // stalker-changes: only update UI if already open, don't open it just from inserting an item
+        if (_ui.IsUiOpen(uid, StalkerRepositoryUiKey.Key, args.User))
+            UpdateUiState(args.User, uid, component);
+
         _loadoutSystem.SendLoadoutStateUpdate(uid, component, args.User);
     }
 
