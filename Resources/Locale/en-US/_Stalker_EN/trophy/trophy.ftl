@@ -45,7 +45,6 @@ st-mob-variant-legendary-bloodsucker = Singular Bloodsucker
 
 st-mob-variant-uncommon-bear-t1 = Adapted Young Bear
 st-mob-variant-rare-bear-t1 = Mutated Young Bear
-st-mob-variant-rare-bear-t1 = Mutated Young Bear
 st-mob-variant-legendary-bear-t1 = Singular Young Bear
 
 st-mob-variant-uncommon-bear-t2 = Adapted Mature Bear
