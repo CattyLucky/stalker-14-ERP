@@ -719,5 +719,15 @@
   id: 81
   time: '2026-02-23T20:32:47.677647+00:00'
   url: https://github.com/coolmankid12345/stalker-14-EN/pull/504
+- author: teecoding
+  changes:
+  - message: Engravings and labels on items are no longer lost when stored in personal
+      stash
+    type: Fix
+  - message: Engraving text is now displayed in the stash item details
+    type: Add
+  id: 82
+  time: '2026-02-23T20:35:40.170634+00:00'
+  url: https://github.com/coolmankid12345/stalker-14-EN/pull/503
 Name: Stalker
 Order: -1
