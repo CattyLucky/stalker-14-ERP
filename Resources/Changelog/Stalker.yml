@@ -693,5 +693,13 @@
   id: 78
   time: '2026-02-22T22:47:11.486177+00:00'
   url: https://github.com/coolmankid12345/stalker-14-EN/pull/496
+- author: teecoding
+  changes:
+  - message: Personal stash no longer opens its UI when storing an item by clicking
+      with it
+    type: Fix
+  id: 79
+  time: '2026-02-23T12:23:22.348303+00:00'
+  url: https://github.com/coolmankid12345/stalker-14-EN/pull/499
 Name: Stalker
 Order: -1
