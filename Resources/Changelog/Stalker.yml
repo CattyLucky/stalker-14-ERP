@@ -701,5 +701,12 @@
   id: 79
   time: '2026-02-23T12:23:22.348303+00:00'
   url: https://github.com/coolmankid12345/stalker-14-EN/pull/499
+- author: teecoding
+  changes:
+  - message: Updated GP-7 neutral gas mask sprites
+    type: Tweak
+  id: 80
+  time: '2026-02-23T12:25:13.562048+00:00'
+  url: https://github.com/coolmankid12345/stalker-14-EN/pull/500
 Name: Stalker
 Order: -1
