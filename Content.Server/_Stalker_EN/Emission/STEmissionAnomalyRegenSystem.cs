@@ -2,6 +2,7 @@ using System.Threading.Tasks;
 using Content.Server._Stalker.Anomaly.Generation.Components;
 using Content.Server._Stalker.Anomaly.Generation.Systems;
 using Content.Shared._Stalker.Anomaly.Prototypes;
+using Content.Shared.Tag;
 using Robust.Shared.Map;
 using Robust.Shared.Map.Components;
 using Robust.Shared.Prototypes;
@@ -19,7 +20,10 @@ public sealed class STEmissionAnomalyRegenSystem : EntitySystem
 {
     [Dependency] private readonly STAnomalyGeneratorSystem _anomalyGenerator = default!;
     [Dependency] private readonly IPrototypeManager _prototype = default!;
+    [Dependency] private readonly TagSystem _tag = default!;
     [Dependency] private readonly IGameTiming _timing = default!;
+
+    private static readonly ProtoId<TagPrototype> BoltTag = "STBolt";
 
     public override void Update(float frameTime)
     {
@@ -52,6 +56,7 @@ public sealed class STEmissionAnomalyRegenSystem : EntitySystem
             case EmissionRegenPhase.WaitingForDeletion:
                 if (_timing.CurTime >= regen.NextAction)
                 {
+                    ClearGroundBolts();
                     regen.Phase = EmissionRegenPhase.Deleting;
                     regen.CurrentMapIndex = 0;
                     regen.NextAction = _timing.CurTime;
@@ -112,9 +117,13 @@ public sealed class STEmissionAnomalyRegenSystem : EntitySystem
 
             if (_prototype.TryIndex(optionsProtoId, out var optionsProto))
             {
-                _ = _anomalyGenerator.StartGeneration(mapId, optionsProto.Options).ContinueWith(
-                    t => Log.Error($"Emission anomaly regen: generation failed for map {mapId}: {t.Exception}"),
-                    TaskContinuationOptions.OnlyOnFaulted);
+                _ = _anomalyGenerator.StartGeneration(mapId, optionsProto.Options).ContinueWith(t =>
+                {
+                    if (t.IsFaulted)
+                        Log.Error($"Emission anomaly regen: generation failed for map {mapId}: {t.Exception}");
+                    else if (t.IsCanceled)
+                        Log.Warning($"Emission anomaly regen: generation was cancelled for map {mapId}");
+                });
                 Log.Info($"Emission anomaly regen: started generation on map {mapId} ({regen.CurrentMapIndex + 1}/{regen.PendingRegenerationMaps.Count})");
             }
             else
@@ -130,6 +139,30 @@ public sealed class STEmissionAnomalyRegenSystem : EntitySystem
             regen.Phase = EmissionRegenPhase.Complete;
             Log.Info("Emission anomaly regen: all maps queued for regeneration");
         }
+    }
+
+    /// <summary>
+    /// Deletes all bolt entities lying on the ground (parented to a map or grid).
+    /// Bolts in player inventories or containers are not affected.
+    /// </summary>
+    private void ClearGroundBolts()
+    {
+        var count = 0;
+        var query = EntityQueryEnumerator<TagComponent, TransformComponent>();
+        while (query.MoveNext(out var uid, out var tagComp, out var xform))
+        {
+            if (!_tag.HasTag(tagComp, BoltTag))
+                continue;
+
+            var parentUid = xform.ParentUid;
+            if (!HasComp<MapComponent>(parentUid) && !HasComp<MapGridComponent>(parentUid))
+                continue;
+
+            QueueDel(uid);
+            count++;
+        }
+
+        Log.Info($"Emission bolt cleanup: queued {count} ground bolts for deletion");
     }
 
     /// <summary>
@@ -155,12 +188,16 @@ public sealed class STEmissionAnomalyRegenSystem : EntitySystem
         // Sort by TotalCount ascending -- delete and regenerate small maps first
         entries.Sort((a, b) => a.TotalCount.CompareTo(b.TotalCount));
 
-        foreach (var (mapId, optionsId, _) in entries)
+        foreach (var (mapId, optionsId, totalCount) in entries)
         {
             regen.PendingDeletionMaps.Add(mapId);
             regen.PendingRegenerationMaps.Add((mapId, optionsId));
+            Log.Info($"Emission anomaly regen: queued map {mapId} (options: {optionsId}, count: {totalCount})");
         }
 
         Log.Info($"Emission anomaly regen: found {entries.Count} maps to regenerate");
+
+        if (entries.Count == 0)
+            Log.Warning("Emission anomaly regen: no maps with STAnomalyGeneratorTarget found!");
     }
 }
