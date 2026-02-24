@@ -1,7 +1,6 @@
 <factionRelations:FactionRelationsUiFragment
     xmlns="https://spacestation14.io"
     xmlns:factionRelations="clr-namespace:Content.Client._Stalker_EN.FactionRelations"
-    xmlns:graphics="clr-namespace:Robust.Client.Graphics;assembly=Robust.Client"
     Margin="4">
 
     <PanelContainer StyleClasses="BackgroundDark"/>
@@ -9,38 +8,30 @@
     <BoxContainer Orientation="Vertical" HorizontalExpand="True" VerticalExpand="True">
         <Label Text="Faction Relations" StyleClasses="LabelHeadingBigger" HorizontalAlignment="Center" Margin="0 4 0 4"/>
 
-        <ScrollContainer HScrollEnabled="True" VScrollEnabled="True" HorizontalExpand="True" VerticalExpand="True"
+        <ScrollContainer HScrollEnabled="False" VScrollEnabled="True" HorizontalExpand="True" VerticalExpand="True"
                          MinSize="100 256">
-            <GridContainer Name="RelationsGrid" Margin="2"/>
+            <GridContainer Name="RelationsGrid" Margin="2" HorizontalExpand="True"/>
         </ScrollContainer>
 
         <BoxContainer Orientation="Horizontal" HorizontalAlignment="Center" Margin="0 4 0 4" SeparationOverride="8">
-            <PanelContainer MinSize="12 12">
-                <PanelContainer.PanelOverride>
-                    <graphics:StyleBoxFlat BackgroundColor="#2d7019"/>
-                </PanelContainer.PanelOverride>
-            </PanelContainer>
+            <TextureRect Stretch="KeepAspectCentered"
+                         TexturePath="/Textures/_Stalker_EN/Interface/FactionRelations/ally.png"
+                         SetSize="16 16"/>
             <Label Text="Alliance" StyleClasses="LabelSmall"/>
 
-            <PanelContainer MinSize="12 12">
-                <PanelContainer.PanelOverride>
-                    <graphics:StyleBoxFlat BackgroundColor="#b8a900"/>
-                </PanelContainer.PanelOverride>
-            </PanelContainer>
+            <TextureRect Stretch="KeepAspectCentered"
+                         TexturePath="/Textures/_Stalker_EN/Interface/FactionRelations/neutral.png"
+                         SetSize="16 16"/>
             <Label Text="Neutral" StyleClasses="LabelSmall"/>
 
-            <PanelContainer MinSize="12 12">
-                <PanelContainer.PanelOverride>
-                    <graphics:StyleBoxFlat BackgroundColor="#c87000"/>
-                </PanelContainer.PanelOverride>
-            </PanelContainer>
+            <TextureRect Stretch="KeepAspectCentered"
+                         TexturePath="/Textures/_Stalker_EN/Interface/FactionRelations/hostile.png"
+                         SetSize="16 16"/>
             <Label Text="Hostile" StyleClasses="LabelSmall"/>
 
-            <PanelContainer MinSize="12 12">
-                <PanelContainer.PanelOverride>
-                    <graphics:StyleBoxFlat BackgroundColor="#a01000"/>
-                </PanelContainer.PanelOverride>
-            </PanelContainer>
+            <TextureRect Stretch="KeepAspectCentered"
+                         TexturePath="/Textures/_Stalker_EN/Interface/FactionRelations/war.png"
+                         SetSize="16 16"/>
             <Label Text="War" StyleClasses="LabelSmall"/>
         </BoxContainer>
     </BoxContainer>

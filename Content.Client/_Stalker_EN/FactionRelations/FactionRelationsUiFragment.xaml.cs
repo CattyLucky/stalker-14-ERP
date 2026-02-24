@@ -35,10 +35,19 @@ public sealed partial class FactionRelationsUiFragment : BoxContainer
         ["Rookies"] = (PatchRsiPathEN, "rookie"),
     };
 
-    private static readonly Color AllianceColor = Color.FromHex("#2d7019");
-    private static readonly Color NeutralColor = Color.FromHex("#b8a900");
-    private static readonly Color HostileColor = Color.FromHex("#c87000");
-    private static readonly Color WarColor = Color.FromHex("#a01000");
+    private static readonly ResPath AllyIconPath = new("/Textures/_Stalker_EN/Interface/FactionRelations/ally.png");
+    private static readonly ResPath NeutralIconPath = new("/Textures/_Stalker_EN/Interface/FactionRelations/neutral.png");
+    private static readonly ResPath HostileIconPath = new("/Textures/_Stalker_EN/Interface/FactionRelations/hostile.png");
+    private static readonly ResPath WarIconPath = new("/Textures/_Stalker_EN/Interface/FactionRelations/war.png");
+
+    private static readonly Dictionary<STFactionRelationType, (ResPath Icon, string Name)> RelationIcons = new()
+    {
+        [STFactionRelationType.Alliance] = (AllyIconPath, "Alliance"),
+        [STFactionRelationType.Neutral] = (NeutralIconPath, "Neutral"),
+        [STFactionRelationType.Hostile] = (HostileIconPath, "Hostile"),
+        [STFactionRelationType.War] = (WarIconPath, "War"),
+    };
+
     private static readonly Color SelfColor = Color.FromHex("#333333");
     private static readonly Color HeaderColor = Color.FromHex("#1a1a2e");
 
@@ -94,8 +103,7 @@ public sealed partial class FactionRelationsUiFragment : BoxContainer
 
                 var key = STFactionRelationHelpers.NormalizePair(rowFaction, colFaction);
                 var relation = lookup.GetValueOrDefault(key, STFactionRelationType.Neutral);
-                var (text, color) = GetRelationDisplay(relation);
-                AddCell(text, color);
+                AddRelationCell(relation, _spriteSystem!);
             }
         }
     }
@@ -113,6 +121,7 @@ public sealed partial class FactionRelationsUiFragment : BoxContainer
                 ContentMarginBottomOverride = 2,
             },
             MinSize = new Vector2(32, 20),
+            HorizontalExpand = true,
             ToolTip = faction,
         };
 
@@ -157,6 +166,7 @@ public sealed partial class FactionRelationsUiFragment : BoxContainer
                 ContentMarginBottomOverride = 1,
             },
             MinSize = new Vector2(32, 20),
+            HorizontalExpand = true,
         };
 
         var label = new Label
@@ -171,15 +181,36 @@ public sealed partial class FactionRelationsUiFragment : BoxContainer
         RelationsGrid.AddChild(panel);
     }
 
-    private static (string Text, Color Color) GetRelationDisplay(STFactionRelationType relation)
+    private void AddRelationCell(STFactionRelationType relation, SpriteSystem spriteSystem)
     {
-        return relation switch
+        var (iconPath, name) = RelationIcons.GetValueOrDefault(relation, RelationIcons[STFactionRelationType.Neutral]);
+        var specifier = new SpriteSpecifier.Texture(iconPath);
+
+        var panel = new PanelContainer
         {
-            STFactionRelationType.Alliance => ("All", AllianceColor),
-            STFactionRelationType.Neutral => ("Neu", NeutralColor),
-            STFactionRelationType.Hostile => ("Hos", HostileColor),
-            STFactionRelationType.War => ("War", WarColor),
-            _ => ("Neu", NeutralColor),
+            PanelOverride = new StyleBoxFlat
+            {
+                BackgroundColor = Color.Transparent,
+                ContentMarginLeftOverride = 2,
+                ContentMarginRightOverride = 2,
+                ContentMarginTopOverride = 2,
+                ContentMarginBottomOverride = 2,
+            },
+            MinSize = new Vector2(32, 20),
+            HorizontalExpand = true,
+            ToolTip = name,
         };
+
+        var textureRect = new TextureRect
+        {
+            Texture = spriteSystem.Frame0(specifier),
+            TextureScale = new Vector2(1.5f, 1.5f),
+            Stretch = TextureRect.StretchMode.KeepCentered,
+            HorizontalAlignment = HAlignment.Center,
+            VerticalAlignment = VAlignment.Center,
+        };
+
+        panel.AddChild(textureRect);
+        RelationsGrid.AddChild(panel);
     }
 }
