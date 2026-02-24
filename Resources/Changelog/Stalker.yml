@@ -770,5 +770,23 @@
   id: 87
   time: '2026-02-24T19:13:57.408614+00:00'
   url: https://github.com/coolmankid12345/stalker-14-EN/pull/516
+- author: teecoding
+  changes:
+  - message: Faction Relations PDA cartridge. View diplomatic relations between all
+      Zone factions on your PDA
+    type: Add
+  - message: Faction leaders can now change relations with other factions through
+      Igor's new Relations tab
+    type: Add
+  - message: Relation changes are announced in-game via the STALKER Network with lore-friendly
+      messages
+    type: Add
+  - message: Faction relations now persist between rounds
+    type: Add
+  - message: PDA faction relations update live when relations change
+    type: Add
+  id: 88
+  time: '2026-02-24T20:43:34.078576+00:00'
+  url: https://github.com/coolmankid12345/stalker-14-EN/pull/518
 Name: Stalker
 Order: -1
