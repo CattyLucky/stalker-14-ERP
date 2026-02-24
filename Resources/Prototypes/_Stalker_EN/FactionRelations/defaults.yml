@@ -1,0 +1,179 @@
+# Default faction relations matrix for the Zone.
+# Relations not listed here default to Neutral.
+# Pairs are always stored with factionA < factionB alphabetically.
+- type: stFactionRelationDefaults
+  id: Default
+  factions:
+    - Loners
+    - Freedom
+    - Bandits
+    - Duty
+    - Ecologist
+    - Neutrals
+    - Mercenaries
+    - Military
+    - Monolith
+    - ClearSky
+    - Renegades
+    - Rookies
+  bandMapping:
+    Stalker: Loners
+    Freedom: Freedom
+    Bandits: Bandits
+    Dolg: Duty
+    Scientists: Ecologist
+    Neutral: Neutrals
+    Mercenaries: Mercenaries
+    Military: Military
+    Monolith: Monolith
+    "Clear Sky": ClearSky
+    Renegades: Renegades
+  relations:
+    # Loners relations
+    - factionA: Bandits
+      factionB: Loners
+      relation: Hostile
+    - factionA: Loners
+      factionB: Neutrals
+      relation: Alliance
+    - factionA: Loners
+      factionB: Monolith
+      relation: War
+    - factionA: Loners
+      factionB: Renegades
+      relation: Hostile
+
+    # Freedom relations
+    - factionA: Duty
+      factionB: Freedom
+      relation: War
+    - factionA: Freedom
+      factionB: Monolith
+      relation: War
+    - factionA: Freedom
+      factionB: Renegades
+      relation: Hostile
+
+    # Bandits relations
+    - factionA: Bandits
+      factionB: Duty
+      relation: War
+    - factionA: Bandits
+      factionB: Ecologist
+      relation: Hostile
+    - factionA: Bandits
+      factionB: Neutrals
+      relation: Hostile
+    - factionA: Bandits
+      factionB: Military
+      relation: War
+    - factionA: Bandits
+      factionB: Monolith
+      relation: War
+    - factionA: Bandits
+      factionB: ClearSky
+      relation: War
+    - factionA: Bandits
+      factionB: Renegades
+      relation: Hostile
+
+    # Duty relations
+    - factionA: Duty
+      factionB: Ecologist
+      relation: Hostile
+    - factionA: Duty
+      factionB: Mercenaries
+      relation: Hostile
+    - factionA: Duty
+      factionB: Military
+      relation: Hostile
+    - factionA: Duty
+      factionB: Monolith
+      relation: War
+    - factionA: ClearSky
+      factionB: Duty
+      relation: Hostile
+    - factionA: Duty
+      factionB: Renegades
+      relation: War
+
+    # Ecologist relations
+    - factionA: Ecologist
+      factionB: Mercenaries
+      relation: Hostile
+    - factionA: Ecologist
+      factionB: Military
+      relation: Alliance
+    - factionA: Ecologist
+      factionB: Monolith
+      relation: War
+    - factionA: Ecologist
+      factionB: Renegades
+      relation: Hostile
+
+    # Neutrals relations
+    - factionA: Mercenaries
+      factionB: Neutrals
+      relation: Hostile
+    - factionA: Monolith
+      factionB: Neutrals
+      relation: War
+    - factionA: Neutrals
+      factionB: Renegades
+      relation: Hostile
+
+    # Mercenaries relations
+    - factionA: Mercenaries
+      factionB: Military
+      relation: Hostile
+    - factionA: Mercenaries
+      factionB: Monolith
+      relation: Hostile
+    - factionA: ClearSky
+      factionB: Mercenaries
+      relation: Hostile
+    - factionA: Mercenaries
+      factionB: Renegades
+      relation: Hostile
+
+    # Military relations
+    - factionA: Military
+      factionB: Monolith
+      relation: War
+    - factionA: ClearSky
+      factionB: Military
+      relation: Hostile
+    - factionA: Military
+      factionB: Renegades
+      relation: War
+
+    # Monolith relations
+    - factionA: ClearSky
+      factionB: Monolith
+      relation: War
+    - factionA: Monolith
+      factionB: Renegades
+      relation: War
+
+    # ClearSky relations
+    - factionA: ClearSky
+      factionB: Renegades
+      relation: War
+
+    # Rookies relations (newbies <10h, no faction should be at War with them)
+    # Mirrors Loners relations but War is downgraded to Hostile
+    - factionA: Loners
+      factionB: Rookies
+      relation: Alliance
+    - factionA: Neutrals
+      factionB: Rookies
+      relation: Alliance
+    - factionA: Bandits
+      factionB: Rookies
+      relation: Hostile
+    - factionA: Monolith
+      factionB: Rookies
+      relation: Hostile
+    - factionA: Renegades
+      factionB: Rookies
+      relation: Hostile

@@ -2063,6 +2063,48 @@ INSERT INTO player_round (players_id, rounds_id) VALUES ({players[player]}, {id}
 
             await db.DbContext.SaveChangesAsync();
         }
+
+        // stalker-en-changes: Faction relations PDA program
+        public async Task<List<StalkerFactionRelation>> GetAllStalkerFactionRelationsAsync()
+        {
+            await using var db = await GetDb();
+            return await db.DbContext.StalkerFactionRelations.ToListAsync();
+        }
+
+        public async Task SetStalkerFactionRelationAsync(string factionA, string factionB, int relationType)
+        {
+            // Normalize alphabetically
+            if (string.Compare(factionA, factionB, StringComparison.Ordinal) > 0)
+                (factionA, factionB) = (factionB, factionA);
+
+            await using var db = await GetDb();
+
+            var record = await db.DbContext.StalkerFactionRelations
+                .FirstOrDefaultAsync(r => r.FactionA == factionA && r.FactionB == factionB);
+
+            if (record is null)
+            {
+                db.DbContext.StalkerFactionRelations.Add(new StalkerFactionRelation
+                {
+                    FactionA = factionA,
+                    FactionB = factionB,
+                    RelationType = relationType,
+                });
+            }
+            else
+            {
+                record.RelationType = relationType;
+            }
+
+            await db.DbContext.SaveChangesAsync();
+        }
+
+        public async Task ClearAllStalkerFactionRelationsAsync()
+        {
+            await using var db = await GetDb();
+            await db.DbContext.StalkerFactionRelations.ExecuteDeleteAsync();
+        }
+
         #endregion
         #region Job Whitelists
 

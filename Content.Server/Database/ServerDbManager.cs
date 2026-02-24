@@ -399,6 +399,11 @@ namespace Content.Server.Database
         Task SetAllStalkerItems(string jsonItems);
         Task ClearAllStalkerStats();
         Task ClearAllStalkerBandPoints();
+
+        // stalker-en-changes: Faction relations PDA program
+        Task<List<StalkerFactionRelation>> GetAllStalkerFactionRelationsAsync();
+        Task SetStalkerFactionRelationAsync(string factionA, string factionB, int relationType);
+        Task ClearAllStalkerFactionRelationsAsync();
         #endregion
     }
     /// <summary>
@@ -1143,6 +1148,25 @@ namespace Content.Server.Database
         {
             DbWriteOpsMetric.Inc();
             return RunDbCommand(() => _db.ClearAllStalkerBandPoints());
+        }
+
+        // stalker-en-changes: Faction relations PDA program
+        public Task<List<StalkerFactionRelation>> GetAllStalkerFactionRelationsAsync()
+        {
+            DbReadOpsMetric.Inc();
+            return RunDbCommand(() => _db.GetAllStalkerFactionRelationsAsync());
+        }
+
+        public Task SetStalkerFactionRelationAsync(string factionA, string factionB, int relationType)
+        {
+            DbWriteOpsMetric.Inc();
+            return RunDbCommand(() => _db.SetStalkerFactionRelationAsync(factionA, factionB, relationType));
+        }
+
+        public Task ClearAllStalkerFactionRelationsAsync()
+        {
+            DbWriteOpsMetric.Inc();
+            return RunDbCommand(() => _db.ClearAllStalkerFactionRelationsAsync());
         }
 
         public Task SetStalkerBandAsync(ProtoId<STBandPrototype> band, float rewardPoints)
