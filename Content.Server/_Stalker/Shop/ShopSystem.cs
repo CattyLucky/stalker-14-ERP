@@ -3,7 +3,6 @@ using System.Linq;
 using Content.Server.Actions;
 using Content.Server.Cargo.Systems;
 using Content.Server.Mind;
-using Content.Server.Stack;
 using Content.Server.Store.Components;
 using Content.Shared._Stalker.Shop;
 using Content.Shared._Stalker.Shop.Prototypes;
@@ -523,9 +522,11 @@ public sealed partial class ShopSystem : SharedShopSystem
         if (money > balance)
             return;
 
-        // Subtract the cash
+        //stalker-en-changes-start
+        // Subtract the cash, cancel if it breaks for some reason
         if (!SubtractBalance(buyer, component, money.Int()))
             return;
+        //stalker-en-changes-end
 
         balance -= money.Int();
 
