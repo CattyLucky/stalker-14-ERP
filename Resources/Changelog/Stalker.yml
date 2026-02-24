@@ -795,5 +795,13 @@
   id: 89
   time: '2026-02-24T21:13:59.708355+00:00'
   url: https://github.com/coolmankid12345/stalker-14-EN/pull/517
+- author: teecoding
+  changes:
+  - message: Igor Ivanovich faction NPC variants now display their name in English
+      instead of Russian
+    type: Fix
+  id: 90
+  time: '2026-02-24T21:42:14.516256+00:00'
+  url: https://github.com/coolmankid12345/stalker-14-EN/pull/520
 Name: Stalker
 Order: -1
