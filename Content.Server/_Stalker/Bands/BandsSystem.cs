@@ -15,6 +15,8 @@ using Content.Shared.StatusIcon.Components;
 using Content.Server.Players.JobWhitelist;
 using Content.Shared._Stalker.Bands.Components;
 using Content.Server._Stalker.WarZone;
+using Content.Server._Stalker_EN.FactionRelations; // stalker-en-changes
+using Content.Shared._Stalker_EN.FactionRelations; // stalker-en-changes
 using Content.Shared.Hands.EntitySystems;
 using Robust.Shared.Player;
 
@@ -34,6 +36,7 @@ namespace Content.Server._Stalker.Bands
         [Dependency] private readonly SharedHandsSystem _hands = default!;
         [Dependency] private readonly IEntityManager _entityManager = default!;
         [Dependency] private readonly ISharedPlayerManager _player = default!;
+        [Dependency] private readonly STFactionRelationsCartridgeSystem _factionRelations = default!; // stalker-en-changes
 
         private sealed record ServerBandInfo(STBandPrototype Prototype, StalkerBand? DbBand = null);
 
@@ -51,8 +54,8 @@ namespace Content.Server._Stalker.Bands
 
             SubscribeLocalEvent<BandsComponent, ComponentInit>(OnInit);
 
-            // Subscribe to the new buy message
             SubscribeLocalEvent<BandsManagingComponent, BandsManagingBuyItemMessage>(OnBuyItem);
+            SubscribeLocalEvent<BandsManagingComponent, BandsManagingSetRelationMessage>(OnSetRelation); // stalker-en-changes
 
             SubscribeLocalEvent<BandsComponent, ChangeBandEvent>(OnChange);
         }
@@ -177,13 +180,21 @@ namespace Content.Server._Stalker.Bands
             }
 
             // --- Create and Send State ---
-            // Get the loaded shop items for this specific component instance
             var shopItems = _loadedShopItems.GetValueOrDefault(uid, new List<BandShopItem>());
 
-            // --- Create and Send State ---
-            var state = new BandsManagingBoundUserInterfaceState(bandName, maxMembers, members, canManage, warZoneInfos, bandPointsInfos, shopItems);
+            // stalker-en-changes start - Gather Faction Relations Data
+            string? playerFaction = component.Faction;
+            if (string.IsNullOrEmpty(playerFaction) && bandInfo != null)
+                playerFaction = _factionRelations.GetBandFactionName(bandInfo.Prototype.Name);
 
-            // Use the correct SetUiState overload - no session needed here.
+            var relationsState = _factionRelations.BuildUiState();
+            // stalker-en-changes end
+
+            var state = new BandsManagingBoundUserInterfaceState(
+                bandName, maxMembers, members, canManage,
+                warZoneInfos, bandPointsInfos, shopItems,
+                playerFaction, relationsState.FactionIds, relationsState.Relations);
+
             _uiSystem.SetUiState(uid, BandsUiKey.Key, state);
         }
 
@@ -349,9 +360,9 @@ namespace Content.Server._Stalker.Bands
             {
                 // It's possible not every role corresponds to a band leader role
                 // Check if the player belongs to *any* band role defined in *any* band prototype hierarchy
+                var candidateJobs = await _dbManager.GetJobWhitelists(userId);
                 foreach (var proto in _prototypeManager.EnumeratePrototypes<STBandPrototype>())
                 {
-                    var candidateJobs = await _dbManager.GetJobWhitelists(userId);
                     var bandRoleIds = proto.Hierarchy.Values.Select(p => p.ToString()).ToHashSet();
                     bandRoleIds.Add(proto.ID.ToString()); // Include base role
 
@@ -474,6 +485,49 @@ namespace Content.Server._Stalker.Bands
             // 5. Compare to ManagingRankId
             return rankId >= bandProto.ManagingRankId;
         }
+
+        // stalker-en-changes start
+        private async void OnSetRelation(EntityUid uid, BandsManagingComponent component, BandsManagingSetRelationMessage msg)
+        {
+            if (!TryGetSession(msg.Actor, out var session))
+                return;
+
+            if (!await CanPlayerManageBandAsync(session.UserId))
+                return;
+
+            // Use the NPC's configured faction if available, otherwise resolve from the player's band.
+            string? playerFaction = component.Faction;
+            if (string.IsNullOrEmpty(playerFaction))
+            {
+                var bandInfo = await GetPlayerBandInfoAsync(session.UserId);
+                if (bandInfo == null)
+                    return;
+
+                playerFaction = _factionRelations.GetBandFactionName(bandInfo.Prototype.Name);
+            }
+
+            if (playerFaction == null)
+                return;
+
+            // Validate the target faction exists in the defaults
+            var factionIds = _factionRelations.GetFactionIds();
+            if (factionIds == null || !factionIds.Contains(msg.TargetFaction))
+                return;
+
+            // Prevent setting relation with own faction
+            if (playerFaction == msg.TargetFaction)
+                return;
+
+            var relationType = (STFactionRelationType) msg.Relation;
+            if (!Enum.IsDefined(relationType))
+                return;
+
+            _factionRelations.SetRelation(playerFaction, msg.TargetFaction, relationType);
+
+            // Refresh Igor UI for the actor
+            UpdateUiState((uid, component), msg.Actor);
+        }
+        // stalker-en-changes end
 
         private async void OnBuyItem(EntityUid uid, BandsManagingComponent component, BandsManagingBuyItemMessage msg)
         {

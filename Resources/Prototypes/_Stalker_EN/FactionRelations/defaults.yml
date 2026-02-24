@@ -16,6 +16,18 @@
     - ClearSky
     - Renegades
     - Rookies
+  bandMapping:
+    Stalker: Loners
+    Freedom: Freedom
+    Bandits: Bandits
+    Dolg: Duty
+    Scientists: Ecologist
+    Neutral: Neutrals
+    Mercenaries: Mercenaries
+    Military: Military
+    Monolith: Monolith
+    "Clear Sky": ClearSky
+    Renegades: Renegades
   relations:
     # Loners relations
     - factionA: Bandits

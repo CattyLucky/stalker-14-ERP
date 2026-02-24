@@ -9,6 +9,7 @@ using Content.Shared.Actions;
 using Robust.Shared.Serialization;
 using Robust.Shared.Network;
 using Content.Shared._Stalker.Bands;
+using Content.Shared._Stalker_EN.FactionRelations; // stalker-en-changes
 
 namespace Content.Shared._Stalker.Bands
 {
@@ -40,7 +41,24 @@ namespace Content.Shared._Stalker.Bands
         public bool CanManage { get; }
         public List<WarZoneInfo> WarZones { get; }
         public List<BandPointsInfo> BandPoints { get; }
-        public List<BandShopItem> ShopItems { get; } // Added shop items
+        public List<BandShopItem> ShopItems { get; }
+
+        // stalker-en-changes start
+        /// <summary>
+        /// The player's faction relation name (e.g. "Loners", "Duty"). Null if not in a mapped faction.
+        /// </summary>
+        public string? PlayerFaction { get; }
+
+        /// <summary>
+        /// All faction names from the defaults prototype, for the relations tab.
+        /// </summary>
+        public List<string> AllFactions { get; }
+
+        /// <summary>
+        /// Current faction relations (non-neutral entries only), for the relations tab.
+        /// </summary>
+        public List<STFactionRelationEntry> FactionRelations { get; }
+        // stalker-en-changes end
 
         public BandsManagingBoundUserInterfaceState(
             string? bandName,
@@ -49,15 +67,23 @@ namespace Content.Shared._Stalker.Bands
             bool canManage,
             List<WarZoneInfo>? warZones,
             List<BandPointsInfo>? bandPoints,
-            List<BandShopItem>? shopItems) // Added shop items
+            List<BandShopItem>? shopItems,
+            string? playerFaction = null, // stalker-en-changes
+            List<string>? allFactions = null, // stalker-en-changes
+            List<STFactionRelationEntry>? factionRelations = null) // stalker-en-changes
         {
             BandName = bandName;
             MaxMembers = maxMembers;
-            Members = members; // Assuming members is never null based on existing code
+            Members = members;
             CanManage = canManage;
             WarZones = warZones ?? new List<WarZoneInfo>();
             BandPoints = bandPoints ?? new List<BandPointsInfo>();
-            ShopItems = shopItems ?? new List<BandShopItem>(); // Added shop items
+            ShopItems = shopItems ?? new List<BandShopItem>();
+            // stalker-en-changes start
+            PlayerFaction = playerFaction;
+            AllFactions = allFactions ?? new List<string>();
+            FactionRelations = factionRelations ?? new List<STFactionRelationEntry>();
+            // stalker-en-changes end
         }
     }
 
@@ -144,12 +170,27 @@ namespace Content.Shared._Stalker.Bands
     [Serializable, NetSerializable]
     public sealed class BandsManagingBuyItemMessage : BoundUserInterfaceMessage
     {
-        public string ItemId { get; } // The ProductEntity ID of the item to buy
+        public string ItemId { get; }
 
         public BandsManagingBuyItemMessage(string itemId)
         {
             ItemId = itemId;
         }
     }
+
+    // stalker-en-changes start
+    [Serializable, NetSerializable]
+    public sealed class BandsManagingSetRelationMessage : BoundUserInterfaceMessage
+    {
+        public string TargetFaction { get; }
+        public int Relation { get; }
+
+        public BandsManagingSetRelationMessage(string targetFaction, int relation)
+        {
+            TargetFaction = targetFaction;
+            Relation = relation;
+        }
+    }
+    // stalker-en-changes end
 }
 

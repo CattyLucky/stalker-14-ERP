@@ -44,6 +44,11 @@ public sealed class STFactionRelationsCartridgeSystem : EntitySystem
     /// </summary>
     private Dictionary<(string, string), STFactionRelationType> _defaultsCache = new();
 
+    /// <summary>
+    /// Cached ordered list of faction IDs from the defaults prototype.
+    /// </summary>
+    private List<string>? _cachedFactionIds;
+
     private bool _cacheReady;
     private WebhookIdentifier? _webhookIdentifier;
 
@@ -79,9 +84,12 @@ public sealed class STFactionRelationsCartridgeSystem : EntitySystem
     private void RebuildDefaultsCache()
     {
         _defaultsCache = new Dictionary<(string, string), STFactionRelationType>();
+        _cachedFactionIds = null;
 
         if (!_protoManager.TryIndex<STFactionRelationDefaultsPrototype>("Default", out var proto))
             return;
+
+        _cachedFactionIds = proto.Factions;
 
         foreach (var rel in proto.Relations)
         {
@@ -137,6 +145,8 @@ public sealed class STFactionRelationsCartridgeSystem : EntitySystem
             BroadcastRelationChange(factionA, factionB, type);
             SendDiscordRelationChange(factionA, factionB, oldRelation, type);
         }
+
+        BroadcastUiUpdate();
     }
 
     /// <summary>
@@ -146,6 +156,7 @@ public sealed class STFactionRelationsCartridgeSystem : EntitySystem
     {
         _dbOverrides.Clear();
         ClearRelationsAsync();
+        BroadcastUiUpdate();
     }
 
     /// <summary>
@@ -165,13 +176,11 @@ public sealed class STFactionRelationsCartridgeSystem : EntitySystem
     }
 
     /// <summary>
-    /// Gets the ordered list of faction display IDs from the defaults prototype.
+    /// Gets the cached ordered list of faction display IDs from the defaults prototype.
     /// </summary>
     public List<string>? GetFactionIds()
     {
-        return _protoManager.TryIndex<STFactionRelationDefaultsPrototype>("Default", out var proto)
-            ? proto.Factions
-            : null;
+        return _cachedFactionIds;
     }
 
     private async void SaveRelationAsync(string factionA, string factionB, int relationType)
@@ -198,7 +207,38 @@ public sealed class STFactionRelationsCartridgeSystem : EntitySystem
         }
     }
 
-    private STFactionRelationsUiState BuildUiState()
+    /// <summary>
+    /// Resolves a band prototype name (e.g. "Dolg") to a faction relation name (e.g. "Duty")
+    /// using the defaults prototype's BandMapping.
+    /// </summary>
+    public string? GetBandFactionName(string bandName)
+    {
+        if (!_protoManager.TryIndex<STFactionRelationDefaultsPrototype>("Default", out var proto))
+            return null;
+
+        return proto.BandMapping.GetValueOrDefault(bandName);
+    }
+
+    /// <summary>
+    /// Pushes the current faction relations state to loaders that have a faction relations cartridge installed.
+    /// </summary>
+    private void BroadcastUiUpdate()
+    {
+        var state = BuildUiState();
+        var query = AllEntityQuery<STFactionRelationsCartridgeComponent, CartridgeComponent>();
+        while (query.MoveNext(out _, out _, out var cartComp))
+        {
+            if (cartComp.LoaderUid is not { } loaderUid)
+                continue;
+
+            if (!TryComp<CartridgeLoaderComponent>(loaderUid, out var loaderComp))
+                continue;
+
+            _cartridgeLoaderSystem.UpdateCartridgeUiState(loaderUid, state, loader: loaderComp);
+        }
+    }
+
+    public STFactionRelationsUiState BuildUiState()
     {
         if (!_protoManager.TryIndex<STFactionRelationDefaultsPrototype>("Default", out var defaults))
             return new STFactionRelationsUiState(new List<string>(), new List<STFactionRelationEntry>());

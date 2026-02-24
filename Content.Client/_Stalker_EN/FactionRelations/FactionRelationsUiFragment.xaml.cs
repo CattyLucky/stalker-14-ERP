@@ -13,39 +13,17 @@ namespace Content.Client._Stalker_EN.FactionRelations;
 [GenerateTypedNameReferences]
 public sealed partial class FactionRelationsUiFragment : BoxContainer
 {
-    private static readonly ResPath PatchRsiPath = new("/Textures/_Stalker/Icons/Patches/band.rsi");
-    private static readonly ResPath PatchRsiPathEN = new("/Textures/_Stalker_EN/Icons/Patches/band.rsi");
+    // Faction patch icons are shared via STFactionPatchIcons
 
     /// <summary>
-    /// RSI paths and state names for faction patch icons in the grid headers.
+    /// White icon variants used in grid cells over colored backgrounds.
     /// </summary>
-    private static readonly Dictionary<string, (ResPath Rsi, string State)> FactionPatchStates = new()
+    private static readonly Dictionary<STFactionRelationType, (ResPath Icon, string Name, Color BgColor)> RelationCellStyles = new()
     {
-        ["Loners"] = (PatchRsiPath, "stalker"),
-        ["Freedom"] = (PatchRsiPath, "freedom"),
-        ["Bandits"] = (PatchRsiPath, "band"),
-        ["Duty"] = (PatchRsiPath, "dolg"),
-        ["Ecologist"] = (PatchRsiPath, "ecologist"),
-        ["Neutrals"] = (PatchRsiPath, "ne"),
-        ["Mercenaries"] = (PatchRsiPath, "merc"),
-        ["Military"] = (PatchRsiPath, "army"),
-        ["Monolith"] = (PatchRsiPath, "monolith"),
-        ["ClearSky"] = (PatchRsiPath, "cn"),
-        ["Renegades"] = (PatchRsiPath, "rene"),
-        ["Rookies"] = (PatchRsiPathEN, "rookie"),
-    };
-
-    private static readonly ResPath AllyIconPath = new("/Textures/_Stalker_EN/Interface/FactionRelations/ally.png");
-    private static readonly ResPath NeutralIconPath = new("/Textures/_Stalker_EN/Interface/FactionRelations/neutral.png");
-    private static readonly ResPath HostileIconPath = new("/Textures/_Stalker_EN/Interface/FactionRelations/hostile.png");
-    private static readonly ResPath WarIconPath = new("/Textures/_Stalker_EN/Interface/FactionRelations/war.png");
-
-    private static readonly Dictionary<STFactionRelationType, (ResPath Icon, string Name)> RelationIcons = new()
-    {
-        [STFactionRelationType.Alliance] = (AllyIconPath, "Alliance"),
-        [STFactionRelationType.Neutral] = (NeutralIconPath, "Neutral"),
-        [STFactionRelationType.Hostile] = (HostileIconPath, "Hostile"),
-        [STFactionRelationType.War] = (WarIconPath, "War"),
+        [STFactionRelationType.Alliance] = (new ResPath("/Textures/_Stalker_EN/Interface/FactionRelations/ally_white.png"), "Alliance", Color.FromHex("#2a5c2a")),
+        [STFactionRelationType.Neutral] = (new ResPath("/Textures/_Stalker_EN/Interface/FactionRelations/neutral_white.png"), "Neutral", Color.FromHex("#8a7e30")),
+        [STFactionRelationType.Hostile] = (new ResPath("/Textures/_Stalker_EN/Interface/FactionRelations/hostile_white.png"), "Hostile", Color.FromHex("#9a6030")),
+        [STFactionRelationType.War] = (new ResPath("/Textures/_Stalker_EN/Interface/FactionRelations/war_white.png"), "War", Color.FromHex("#7a2a2a")),
     };
 
     private static readonly Color SelfColor = Color.FromHex("#333333");
@@ -125,7 +103,7 @@ public sealed partial class FactionRelationsUiFragment : BoxContainer
             ToolTip = faction,
         };
 
-        if (FactionPatchStates.TryGetValue(faction, out var patch))
+        if (STFactionPatchIcons.PatchStates.TryGetValue(faction, out var patch))
         {
             var specifier = new SpriteSpecifier.Rsi(patch.Rsi, patch.State);
             var textureRect = new TextureRect
@@ -183,14 +161,14 @@ public sealed partial class FactionRelationsUiFragment : BoxContainer
 
     private void AddRelationCell(STFactionRelationType relation, SpriteSystem spriteSystem)
     {
-        var (iconPath, name) = RelationIcons.GetValueOrDefault(relation, RelationIcons[STFactionRelationType.Neutral]);
+        var (iconPath, name, bgColor) = RelationCellStyles.GetValueOrDefault(relation, RelationCellStyles[STFactionRelationType.Neutral]);
         var specifier = new SpriteSpecifier.Texture(iconPath);
 
         var panel = new PanelContainer
         {
             PanelOverride = new StyleBoxFlat
             {
-                BackgroundColor = Color.Transparent,
+                BackgroundColor = bgColor,
                 ContentMarginLeftOverride = 2,
                 ContentMarginRightOverride = 2,
                 ContentMarginTopOverride = 2,

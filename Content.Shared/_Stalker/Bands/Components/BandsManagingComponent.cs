@@ -19,5 +19,15 @@ namespace Content.Shared._Stalker.Bands.Components
         /// </summary>
         [DataField("shopListingsProto", required: true)]
         public ProtoId<BandShopListingsPrototype> ShopListingsProto { get; private set; } = default!;
+
+        // stalker-en-changes start
+        /// <summary>
+        /// The faction relation name this NPC manages (e.g. "Loners", "Duty").
+        /// When set, the Relations tab uses this instead of resolving from the player's band.
+        /// Maps to faction names in STFactionRelationDefaultsPrototype.
+        /// </summary>
+        [DataField]
+        public string? Faction { get; private set; }
+        // stalker-en-changes end
     }
 }

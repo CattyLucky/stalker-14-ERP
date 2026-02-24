@@ -26,6 +26,14 @@ public sealed class STFactionRelationDefaultsPrototype : IPrototype
     /// </summary>
     [DataField(required: true)]
     public List<STFactionRelationDefault> Relations { get; } = new();
+
+    /// <summary>
+    /// Maps STBandPrototype names to faction relation names.
+    /// E.g. "Dolg" -> "Duty", "Stalker" -> "Loners".
+    /// Used to resolve a player's band into their faction relation identity.
+    /// </summary>
+    [DataField]
+    public Dictionary<string, string> BandMapping { get; } = new();
 }
 
 /// <summary>
