@@ -755,5 +755,12 @@
   id: 85
   time: '2026-02-24T16:33:33.284837+00:00'
   url: https://github.com/coolmankid12345/stalker-14-EN/pull/512
+- author: teecoding
+  changes:
+  - message: Fixed sky appearing too green during dawn and dusk transitions
+    type: Fix
+  id: 86
+  time: '2026-02-24T19:11:20.364084+00:00'
+  url: https://github.com/coolmankid12345/stalker-14-EN/pull/515
 Name: Stalker
 Order: -1
