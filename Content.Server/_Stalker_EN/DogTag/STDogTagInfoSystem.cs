@@ -9,14 +9,14 @@ namespace Content.Server._Stalker_EN.DogTag;
 /// <summary>
 /// Stamps character identity information onto dog tags when players spawn.
 /// Listens to <see cref="PlayerSpawnCompleteEvent"/> and writes the character's
-/// name and age from their profile onto any dog tag in the neck slot.
+/// name and age from their profile onto any dog tag in the dogtag slot.
 /// </summary>
 public sealed class STDogTagInfoSystem : EntitySystem
 {
     [Dependency] private readonly InventorySystem _inventory = default!;
     [Dependency] private readonly TagSystem _tags = default!;
 
-    private const string NeckSlot = "neck";
+    private const string DogtagSlot = "dogtag";
     private static readonly ProtoId<TagPrototype> DogtagTag = "Dogtag";
 
     public override void Initialize()
@@ -28,15 +28,15 @@ public sealed class STDogTagInfoSystem : EntitySystem
 
     private void OnPlayerSpawnComplete(PlayerSpawnCompleteEvent args)
     {
-        if (!_inventory.TryGetSlotEntity(args.Mob, NeckSlot, out var neckEntity))
+        if (!_inventory.TryGetSlotEntity(args.Mob, DogtagSlot, out var dogtagEntity))
             return;
 
-        if (!_tags.HasTag(neckEntity.Value, DogtagTag))
+        if (!_tags.HasTag(dogtagEntity.Value, DogtagTag))
             return;
 
-        var info = EnsureComp<STDogTagInfoComponent>(neckEntity.Value);
+        var info = EnsureComp<STDogTagInfoComponent>(dogtagEntity.Value);
         info.OwnerName = args.Profile.Name;
         info.OwnerAge = args.Profile.Age;
-        Dirty(neckEntity.Value, info);
+        Dirty(dogtagEntity.Value, info);
     }
 }
