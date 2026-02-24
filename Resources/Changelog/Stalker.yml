@@ -762,5 +762,13 @@
   id: 86
   time: '2026-02-24T19:11:20.364084+00:00'
   url: https://github.com/coolmankid12345/stalker-14-EN/pull/515
+- author: teecoding
+  changes:
+  - message: Dog tags now have their own dedicated equipment slot, freeing up the
+      neck slot for other items
+    type: Add
+  id: 87
+  time: '2026-02-24T19:13:57.408614+00:00'
+  url: https://github.com/coolmankid12345/stalker-14-EN/pull/516
 Name: Stalker
 Order: -1
