@@ -231,7 +231,6 @@ public sealed partial class ShopSystem : SharedShopSystem
         _ui.SetUiState(shop, ShopUiKey.Key, state);
     }
     #endregion
-
     #region Containers logic
 
     private List<EntityUid> GetItemInHandsOrInventory(EntityUid seller, string entityPrototypeId, int count)
@@ -540,12 +539,8 @@ public sealed partial class ShopSystem : SharedShopSystem
         if (money > balance)
             return;
 
-        //stalker-en-changes-start
-        // Subtract the cash, cancel if it breaks for some reason
-        if (!SubtractBalance(buyer, component, money.Int()))
-            return;
-        //stalker-en-changes-end
-
+        // Subtract the cash
+        SubtractBalance(buyer, component, money.Int());
         balance -= money.Int();
 
         if (listing.ProductEntity != null)
@@ -736,46 +731,70 @@ public sealed partial class ShopSystem : SharedShopSystem
         return containerCost;
     }
 
-    // stalker-en-changes-start - Proper money syncing
-    // Use this instead of the other ones, should have the functionality of both
-    // Change the Roubles in someone's inventory, returns false if the transaction couldn't be completed
-    private bool ChangeBalance(EntityUid uid, ShopComponent component, int change)
+    private void IncreaseBalance(EntityUid uid, ShopComponent component, int change)
     {
-        var stacks = GetContainersElements(uid)
-            .Select(e => (Entity: e, Stack: CompOrNull<StackComponent>(e)))
-            .Where(x => x.Stack != null && x.Stack.StackTypeId == component.MoneyId)
-            .ToList();
+        if (!TryComp<TransformComponent>(uid, out var xform))
+            return;
 
-        if (stacks.Count == 0)
-            return false;
+        var maxCount = _stack.GetMaxCount(new EntProtoId(component.MoneyId));
 
-        var target = stacks[0];
+        var elements = GetContainersElements(uid); // Necessary due to money adding below.
+        var remainingChange = change;
 
-        foreach (var entry in stacks)
+        foreach (var element in elements)
         {
-            if (entry.Entity == target.Entity)
+            if (!TryComp<StackComponent>(element, out var stack) || stack.StackTypeId != component.MoneyId)
                 continue;
 
-            _stack.TryMergeStacks(entry.Entity, target.Entity, out _);
+            var availableSpace = maxCount - stack.Count;
+            if (availableSpace <= 0)
+                continue;
+
+            var toAdd = Math.Min(availableSpace, remainingChange);
+            _stack.SetCount(element, stack.Count + toAdd);
+            remainingChange -= toAdd;
+
+            if (remainingChange <= 0)
+                return;
         }
 
-        var newCount = target.Stack!.Count + change;
-        _stack.SetCount(target, newCount);
-        return true;
+        while (remainingChange > 0)
+        {
+            var toSpawn = Math.Min(maxCount, remainingChange);
+            var money = Spawn(component.MoneyId, xform.Coordinates);
+            _stack.SetCount(money, toSpawn);
+            _hands.PickupOrDrop(uid, money);
+
+            remainingChange -= toSpawn;
+        }
     }
 
-    [Obsolete("Use ChangeBalance instead.")]
-    private bool IncreaseBalance(EntityUid uid, ShopComponent component, int change)
+    private void SubtractBalance(EntityUid uid, ShopComponent component, int change)
     {
-        return ChangeBalance(uid, component, -change);
-    }
+        var elements = GetContainersElements(uid);
+        foreach (var element in elements)
+        {
+            if (!TryComp<StackComponent>(element, out var stack) || stack.StackTypeId != component.MoneyId)
+                continue;
 
-    [Obsolete("Use ChangeBalance instead.")]
-    private bool SubtractBalance(EntityUid uid, ShopComponent component, int change)
-    {
-        return ChangeBalance(uid, component, -change);
+            if (stack.Count < 0)
+                throw new Exception("Stack count cannot be negative!");
+
+            if (stack.Count > change)
+            {
+                // I just can't adjust stacks through their native systems
+                var old = stack.Count;
+                stack.Count -= change;
+
+                var ev = new StackCountChangedEvent(old, stack.Count);
+                RaiseLocalEvent(element, ev);
+                return;
+            }
+
+            QueueDel(element);
+            change -= stack.Count;
+        }
     }
-    //stalker-en-changes-end
     #endregion
 
     #region Helpers
