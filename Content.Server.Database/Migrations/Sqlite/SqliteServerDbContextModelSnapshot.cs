@@ -1351,6 +1351,26 @@ namespace Content.Server.Database.Migrations.Sqlite
                     b.ToTable("stalker_factions", (string)null);
                 });
 
+            modelBuilder.Entity("Content.Server.Database.StalkerFactionRelation", b =>
+                {
+                    b.Property<string>("FactionA")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("faction_a");
+
+                    b.Property<string>("FactionB")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("faction_b");
+
+                    b.Property<int>("RelationType")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("relation_type");
+
+                    b.HasKey("FactionA", "FactionB")
+                        .HasName("PK_stalker_faction_relations");
+
+                    b.ToTable("stalker_faction_relations", (string)null);
+                });
+
             modelBuilder.Entity("Content.Server.Database.StalkerStats", b =>
                 {
                     b.Property<int>("Id")
