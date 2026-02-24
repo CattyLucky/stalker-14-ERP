@@ -729,5 +729,13 @@
   id: 82
   time: '2026-02-23T20:35:40.170634+00:00'
   url: https://github.com/coolmankid12345/stalker-14-EN/pull/503
+- author: teecoding
+  changes:
+  - message: Bears now properly roam and idle when no players are nearby instead of
+      standing still after spawning
+    type: Fix
+  id: 83
+  time: '2026-02-24T11:28:45.818795+00:00'
+  url: https://github.com/coolmankid12345/stalker-14-EN/pull/510
 Name: Stalker
 Order: -1
