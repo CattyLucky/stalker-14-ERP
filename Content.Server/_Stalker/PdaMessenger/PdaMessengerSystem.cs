@@ -27,7 +27,7 @@ public sealed class PdaMessengerSystem : EntitySystem
     [Dependency] private readonly RingerSystem _ringer = default!;
     [Dependency] private readonly IGameTiming _timing = default!;
 
-    private readonly List<PdaChat> _chats = new() { new PdaChat("General") };
+    private readonly List<PdaChat> _chats = new() { new PdaChat("General"), new PdaChat("Rookie"), new PdaChat("Trading"), new PdaChat("Jobs") };
     private WebhookIdentifier? _webhookIdentifier;
 
     public override void Initialize()
@@ -88,6 +88,30 @@ public sealed class PdaMessengerSystem : EntitySystem
         if (message.Message.Receiver == "General")
         {
             _chats[0].Messages.Add(message.Message);
+            SendMessageDiscordMessage(message.Message, senderName);
+            UpdateUiState(messenger, GetEntity(args.LoaderUid), messenger.Comp);
+            TryNotify();
+            return;
+        }
+        else if (message.Message.Receiver == "Rookie")
+        {
+            _chats[1].Messages.Add(message.Message);
+            SendMessageDiscordMessage(message.Message, senderName);
+            UpdateUiState(messenger, GetEntity(args.LoaderUid), messenger.Comp);
+            TryNotify();
+            return;
+        }
+        else if (message.Message.Receiver == "Trading")
+        {
+            _chats[2].Messages.Add(message.Message);
+            SendMessageDiscordMessage(message.Message, senderName);
+            UpdateUiState(messenger, GetEntity(args.LoaderUid), messenger.Comp);
+            TryNotify();
+            return;
+        }
+        else if (message.Message.Receiver == "Jobs")
+        {
+            _chats[3].Messages.Add(message.Message);
             SendMessageDiscordMessage(message.Message, senderName);
             UpdateUiState(messenger, GetEntity(args.LoaderUid), messenger.Comp);
             TryNotify();
