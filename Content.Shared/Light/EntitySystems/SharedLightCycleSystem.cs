@@ -91,7 +91,7 @@ public abstract class SharedLightCycleSystem : EntitySystem
                 waveLength,
                 MathF.Max(0f, comp.MaxLevel.G),
                 MathF.Max(0f, comp.MinLevel.G),
-                4f)); // Stalker-Changes: 10f -> 8f -> 4f to achieve ~66% day / ~33% night
+                6f)); // Stalker-Changes: 10f -> 8f -> 6f; higher exponent than red ensures green lags during dawn/dusk for warm transitions
 
         var blue = MathF.Min(comp.ClipLevel.B,
             CalculateBlueWithGapControl(time, // Stalker-Changes: CalculateCurve doesn't fit if we need to make days longer, so as the distance for gaps for this function
