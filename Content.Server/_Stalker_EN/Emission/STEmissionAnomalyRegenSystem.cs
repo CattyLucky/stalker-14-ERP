@@ -112,9 +112,13 @@ public sealed class STEmissionAnomalyRegenSystem : EntitySystem
 
             if (_prototype.TryIndex(optionsProtoId, out var optionsProto))
             {
-                _ = _anomalyGenerator.StartGeneration(mapId, optionsProto.Options).ContinueWith(
-                    t => Log.Error($"Emission anomaly regen: generation failed for map {mapId}: {t.Exception}"),
-                    TaskContinuationOptions.OnlyOnFaulted);
+                _ = _anomalyGenerator.StartGeneration(mapId, optionsProto.Options).ContinueWith(t =>
+                {
+                    if (t.IsFaulted)
+                        Log.Error($"Emission anomaly regen: generation failed for map {mapId}: {t.Exception}");
+                    else if (t.IsCanceled)
+                        Log.Warning($"Emission anomaly regen: generation was cancelled for map {mapId}");
+                });
                 Log.Info($"Emission anomaly regen: started generation on map {mapId} ({regen.CurrentMapIndex + 1}/{regen.PendingRegenerationMaps.Count})");
             }
             else
@@ -155,12 +159,16 @@ public sealed class STEmissionAnomalyRegenSystem : EntitySystem
         // Sort by TotalCount ascending -- delete and regenerate small maps first
         entries.Sort((a, b) => a.TotalCount.CompareTo(b.TotalCount));
 
-        foreach (var (mapId, optionsId, _) in entries)
+        foreach (var (mapId, optionsId, totalCount) in entries)
         {
             regen.PendingDeletionMaps.Add(mapId);
             regen.PendingRegenerationMaps.Add((mapId, optionsId));
+            Log.Info($"Emission anomaly regen: queued map {mapId} (options: {optionsId}, count: {totalCount})");
         }
 
         Log.Info($"Emission anomaly regen: found {entries.Count} maps to regenerate");
+
+        if (entries.Count == 0)
+            Log.Warning("Emission anomaly regen: no maps with STAnomalyGeneratorTarget found!");
     }
 }

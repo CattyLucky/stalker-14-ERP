@@ -116,6 +116,9 @@ public sealed partial class STAnomalyGeneratorSystem : EntitySystem
 
         Log.Info($"Generation {job.AsTask.Id} end, count: {count}\\{total} ({percent}%)");
 
+        if (count == 0)
+            Log.Warning($"Generation {job.AsTask.Id} for {mapId} produced 0 anomalies out of {total} requested!");
+
         Data.Comp.MapGeneratedAnomalies[mapId] = job.Result!.SpawnedAnomalies;
         return job.Result!;
     }
@@ -134,6 +137,8 @@ public sealed partial class STAnomalyGeneratorSystem : EntitySystem
             QueueDel(anomaly);
             count++;
         }
+
+        Data.Comp.MapGeneratedAnomalies.Remove(mapId);
 
         Log.Info($"Clearing for {mapId} ended, count: {count}");
     }
