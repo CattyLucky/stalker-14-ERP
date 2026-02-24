@@ -737,5 +737,14 @@
   id: 83
   time: '2026-02-24T11:28:45.818795+00:00'
   url: https://github.com/coolmankid12345/stalker-14-EN/pull/510
+- author: teecoding
+  changes:
+  - message: Improved emission anomaly regeneration reliability
+    type: Fix
+  - message: Ground bolts are now auto-removed during emission anomaly regen
+    type: Fix
+  id: 84
+  time: '2026-02-24T16:23:06.200744+00:00'
+  url: https://github.com/coolmankid12345/stalker-14-EN/pull/511
 Name: Stalker
 Order: -1
