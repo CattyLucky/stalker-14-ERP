@@ -35,7 +35,7 @@ public sealed partial class ShopSystem : SharedShopSystem
     [Dependency] private readonly UserInterfaceSystem _ui = default!;
     [Dependency] private readonly IPrototypeManager _proto = default!;
     [Dependency] private readonly SharedHandsSystem _hands = default!;
-    [Dependency] private readonly StackSystem _stack = default!;
+    [Dependency] private readonly SharedStackSystem _stack = default!;
     [Dependency] private readonly ActionsSystem _actions = default!;
     [Dependency] private readonly MindSystem _mind = default!;
     [Dependency] private readonly PricingSystem _pricing = default!;
