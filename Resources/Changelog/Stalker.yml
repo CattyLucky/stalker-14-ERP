@@ -746,5 +746,14 @@
   id: 84
   time: '2026-02-24T16:23:06.200744+00:00'
   url: https://github.com/coolmankid12345/stalker-14-EN/pull/511
+- author: Roland410
+  changes:
+  - message: Changes faction conversion kits to include more items.
+    type: Tweak
+  - message: Bonfires can be lit with lighters now.
+    type: Tweak
+  id: 85
+  time: '2026-02-24T16:33:33.284837+00:00'
+  url: https://github.com/coolmankid12345/stalker-14-EN/pull/512
 Name: Stalker
 Order: -1
