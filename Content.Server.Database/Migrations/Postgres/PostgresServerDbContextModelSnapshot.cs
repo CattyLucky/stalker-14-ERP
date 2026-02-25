@@ -1450,6 +1450,38 @@ namespace Content.Server.Database.Migrations.Postgres
                     b.ToTable("stalker_faction_relations", (string)null);
                 });
 
+            modelBuilder.Entity("Content.Server.Database.StalkerFactionRelationProposal", b =>
+                {
+                    b.Property<string>("InitiatingFaction")
+                        .HasColumnType("text")
+                        .HasColumnName("initiating_faction");
+
+                    b.Property<string>("TargetFaction")
+                        .HasColumnType("text")
+                        .HasColumnName("target_faction");
+
+                    b.Property<bool>("Broadcast")
+                        .HasColumnType("boolean")
+                        .HasColumnName("broadcast");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CustomMessage")
+                        .HasColumnType("text")
+                        .HasColumnName("custom_message");
+
+                    b.Property<int>("ProposedRelationType")
+                        .HasColumnType("integer")
+                        .HasColumnName("proposed_relation_type");
+
+                    b.HasKey("InitiatingFaction", "TargetFaction")
+                        .HasName("PK_stalker_faction_relation_proposals");
+
+                    b.ToTable("stalker_faction_relation_proposals", (string)null);
+                });
+
             modelBuilder.Entity("Content.Server.Database.StalkerStats", b =>
                 {
                     b.Property<int>("Id")

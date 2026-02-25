@@ -2105,6 +2105,68 @@ INSERT INTO player_round (players_id, rounds_id) VALUES ({players[player]}, {id}
             await db.DbContext.StalkerFactionRelations.ExecuteDeleteAsync();
         }
 
+        // stalker-en-changes: Faction relation proposals
+        public async Task<List<StalkerFactionRelationProposal>> GetAllStalkerFactionRelationProposalsAsync()
+        {
+            await using var db = await GetDb();
+            return await db.DbContext.StalkerFactionRelationProposals.ToListAsync();
+        }
+
+        public async Task SetStalkerFactionRelationProposalAsync(
+            string initiatingFaction,
+            string targetFaction,
+            int proposedRelationType,
+            string? customMessage,
+            bool broadcast)
+        {
+            await using var db = await GetDb();
+
+            var existing = await db.DbContext.StalkerFactionRelationProposals
+                .FirstOrDefaultAsync(p => p.InitiatingFaction == initiatingFaction && p.TargetFaction == targetFaction);
+
+            if (existing is null)
+            {
+                db.DbContext.StalkerFactionRelationProposals.Add(new StalkerFactionRelationProposal
+                {
+                    InitiatingFaction = initiatingFaction,
+                    TargetFaction = targetFaction,
+                    ProposedRelationType = proposedRelationType,
+                    CustomMessage = customMessage,
+                    CreatedAt = DateTime.UtcNow,
+                    Broadcast = broadcast,
+                });
+            }
+            else
+            {
+                existing.ProposedRelationType = proposedRelationType;
+                existing.CustomMessage = customMessage;
+                existing.CreatedAt = DateTime.UtcNow;
+                existing.Broadcast = broadcast;
+            }
+
+            await db.DbContext.SaveChangesAsync();
+        }
+
+        public async Task DeleteStalkerFactionRelationProposalAsync(string initiatingFaction, string targetFaction)
+        {
+            await using var db = await GetDb();
+
+            var record = await db.DbContext.StalkerFactionRelationProposals
+                .FirstOrDefaultAsync(p => p.InitiatingFaction == initiatingFaction && p.TargetFaction == targetFaction);
+
+            if (record != null)
+            {
+                db.DbContext.StalkerFactionRelationProposals.Remove(record);
+                await db.DbContext.SaveChangesAsync();
+            }
+        }
+
+        public async Task ClearAllStalkerFactionRelationProposalsAsync()
+        {
+            await using var db = await GetDb();
+            await db.DbContext.StalkerFactionRelationProposals.ExecuteDeleteAsync();
+        }
+
         #endregion
         #region Job Whitelists
 

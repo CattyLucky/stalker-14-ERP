@@ -404,6 +404,12 @@ namespace Content.Server.Database
         Task<List<StalkerFactionRelation>> GetAllStalkerFactionRelationsAsync();
         Task SetStalkerFactionRelationAsync(string factionA, string factionB, int relationType);
         Task ClearAllStalkerFactionRelationsAsync();
+
+        // stalker-en-changes: Faction relation proposals
+        Task<List<StalkerFactionRelationProposal>> GetAllStalkerFactionRelationProposalsAsync();
+        Task SetStalkerFactionRelationProposalAsync(string initiatingFaction, string targetFaction, int proposedRelationType, string? customMessage, bool broadcast);
+        Task DeleteStalkerFactionRelationProposalAsync(string initiatingFaction, string targetFaction);
+        Task ClearAllStalkerFactionRelationProposalsAsync();
         #endregion
     }
     /// <summary>
@@ -1167,6 +1173,31 @@ namespace Content.Server.Database
         {
             DbWriteOpsMetric.Inc();
             return RunDbCommand(() => _db.ClearAllStalkerFactionRelationsAsync());
+        }
+
+        // stalker-en-changes: Faction relation proposals
+        public Task<List<StalkerFactionRelationProposal>> GetAllStalkerFactionRelationProposalsAsync()
+        {
+            DbReadOpsMetric.Inc();
+            return RunDbCommand(() => _db.GetAllStalkerFactionRelationProposalsAsync());
+        }
+
+        public Task SetStalkerFactionRelationProposalAsync(string initiatingFaction, string targetFaction, int proposedRelationType, string? customMessage, bool broadcast)
+        {
+            DbWriteOpsMetric.Inc();
+            return RunDbCommand(() => _db.SetStalkerFactionRelationProposalAsync(initiatingFaction, targetFaction, proposedRelationType, customMessage, broadcast));
+        }
+
+        public Task DeleteStalkerFactionRelationProposalAsync(string initiatingFaction, string targetFaction)
+        {
+            DbWriteOpsMetric.Inc();
+            return RunDbCommand(() => _db.DeleteStalkerFactionRelationProposalAsync(initiatingFaction, targetFaction));
+        }
+
+        public Task ClearAllStalkerFactionRelationProposalsAsync()
+        {
+            DbWriteOpsMetric.Inc();
+            return RunDbCommand(() => _db.ClearAllStalkerFactionRelationProposalsAsync());
         }
 
         public Task SetStalkerBandAsync(ProtoId<STBandPrototype> band, float rewardPoints)

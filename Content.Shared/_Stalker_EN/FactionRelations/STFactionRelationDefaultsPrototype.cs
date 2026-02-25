@@ -34,6 +34,30 @@ public sealed class STFactionRelationDefaultsPrototype : IPrototype
     /// </summary>
     [DataField]
     public Dictionary<string, string> BandMapping { get; } = new();
+
+    /// <summary>
+    /// Maps a primary faction to its aliases.
+    /// Alias factions share the primary's relations and are hidden from UIs.
+    /// E.g. "Loners" -> ["Rookies", "Neutrals"].
+    /// </summary>
+    [DataField]
+    public Dictionary<string, List<string>> FactionGroups { get; } = new();
+
+    /// <summary>
+    /// Factions that cannot be targeted by player-initiated relation changes.
+    /// Only admins can change relations involving these factions.
+    /// Players in restricted factions do not see the Relations tab.
+    /// </summary>
+    [DataField]
+    public List<string> RestrictedFactions { get; } = new();
+
+    /// <summary>
+    /// Maps faction IDs to human-readable display names.
+    /// Only factions that differ from their ID need an entry (e.g. "ClearSky" → "Clear Sky").
+    /// Factions without an entry use their ID as-is.
+    /// </summary>
+    [DataField]
+    public Dictionary<string, string> DisplayNames { get; } = new();
 }
 
 /// <summary>
