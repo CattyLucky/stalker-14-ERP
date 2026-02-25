@@ -803,5 +803,12 @@
   id: 90
   time: '2026-02-24T21:42:14.516256+00:00'
   url: https://github.com/coolmankid12345/stalker-14-EN/pull/520
+- author: crocodilecarousel
+  changes:
+  - message: Wartime Igors have been added to faction bases
+    type: Add
+  id: 91
+  time: '2026-02-25T00:58:16.827989+00:00'
+  url: https://github.com/coolmankid12345/stalker-14-EN/pull/522
 Name: Stalker
 Order: -1
