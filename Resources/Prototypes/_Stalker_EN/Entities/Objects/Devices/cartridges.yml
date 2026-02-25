@@ -12,6 +12,6 @@
   - type: Cartridge
     programName: st-faction-relations-program-name
     icon:
-      sprite: Objects/Misc/books.rsi
-      state: book_icon
+      sprite: _Stalker_EN/Interface/Cartridges/faction_relations.rsi
+      state: icon
   - type: STFactionRelationsCartridge

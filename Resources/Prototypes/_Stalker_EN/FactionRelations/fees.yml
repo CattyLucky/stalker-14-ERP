@@ -1,0 +1,49 @@
+# Fee schedule for faction relation changes.
+# Only the initiator pays. Accepting or rejecting a proposal is free.
+# Rejected/cancelled/expired proposals receive a partial refund via Igor's claimable funds.
+# Escalation (cheaper): declaring war / hostility costs less.
+# De-escalation (more expensive): ending war / seeking peace costs more (2-3x ratio).
+# Values are in physical roubles deducted from the leader's inventory.
+- type: stFactionRelationFees
+  id: Default
+  fees:
+    # === Escalation (unilateral, instant) ===
+    - from: Neutral
+      to: Hostile
+      cost: 8000
+    - from: Hostile
+      to: War
+      cost: 15000
+    - from: Neutral
+      to: War
+      cost: 20000
+    # === Alliance breaking (unilateral, instant) ===
+    - from: Alliance
+      to: Neutral
+      cost: 15000
+    - from: Alliance
+      to: Hostile
+      cost: 20000
+    - from: Alliance
+      to: War
+      cost: 25000
+    # === De-escalation (bilateral, requires approval) ===
+    - from: War
+      to: Hostile
+      cost: 30000
+    - from: War
+      to: Neutral
+      cost: 45000
+    - from: Hostile
+      to: Neutral
+      cost: 20000
+    # === Alliance building (bilateral, requires approval) ===
+    - from: Neutral
+      to: Alliance
+      cost: 50000
+    - from: Hostile
+      to: Alliance
+      cost: 75000
+    - from: War
+      to: Alliance
+      cost: 100000
