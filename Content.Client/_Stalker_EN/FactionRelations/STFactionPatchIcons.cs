@@ -32,7 +32,7 @@ public static class STFactionPatchIcons
         [Freedom] = (PatchRsiPath, "freedom"),
         [Bandits] = (PatchRsiPath, "band"),
         [Duty] = (PatchRsiPathEN, "dolg1"),
-        [Ecologist] = (PatchRsiPath, "ecologist"),
+        [Ecologist] = (PatchRsiPath, "sci"),
         [Neutrals] = (PatchRsiPath, "ne"),
         [Mercenaries] = (PatchRsiPath, "merc"),
         [Military] = (PatchRsiPathEN, "voen1"),
