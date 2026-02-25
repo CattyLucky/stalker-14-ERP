@@ -90,6 +90,8 @@
     MutantPartPseudogiantHeart: 3400
     MutantPartZombieHand: 450
     MutantPartIzlomArm: 545
+    MutantPartBurerBrain: 1500
+    MutantPartControllerBrain: 2500
 
     #Value
     STJewelrySilver: 400

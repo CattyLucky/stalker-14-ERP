@@ -30,6 +30,8 @@
     MutantPartZombieHand: 1215
     ClothingHeadBear: 1400
     MutantPartIzlomArm: 1200
+    MutantPartBurerBrain: 2000
+    MutantPartControllerBrain: 3500
 
   categories:
     - name: shop-category-weapons
