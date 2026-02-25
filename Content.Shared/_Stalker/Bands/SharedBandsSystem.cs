@@ -58,6 +58,46 @@ namespace Content.Shared._Stalker.Bands
         /// Current faction relations (non-neutral entries only), for the relations tab.
         /// </summary>
         public List<STFactionRelationEntry> FactionRelations { get; }
+
+        /// <summary>
+        /// Pending incoming proposals targeting the player's faction.
+        /// </summary>
+        public List<STFactionRelationProposalEntry> IncomingProposals { get; }
+
+        /// <summary>
+        /// Pending outgoing proposals from the player's faction.
+        /// </summary>
+        public List<STFactionRelationProposalEntry> OutgoingProposals { get; }
+
+        /// <summary>
+        /// Fee entries for relation changes (sent as list, client builds lookup).
+        /// </summary>
+        public List<STFactionRelationFeeEntry> Fees { get; }
+
+        /// <summary>
+        /// The player's current rouble balance for affordability display.
+        /// </summary>
+        public int PlayerRoubles { get; }
+
+        /// <summary>
+        /// Per-pair cooldown remaining in seconds. Key: target faction name.
+        /// </summary>
+        public Dictionary<string, float> CooldownsRemaining { get; }
+
+        /// <summary>
+        /// When true, the Relations tab should be hidden (player is in a restricted faction).
+        /// </summary>
+        public bool HideRelationsTab { get; }
+
+        /// <summary>
+        /// Total roubles available to claim as refunds from rejected/cancelled/expired proposals.
+        /// </summary>
+        public int ClaimableFundsTotal { get; }
+
+        /// <summary>
+        /// Maps faction IDs to human-readable display names (e.g. "ClearSky" → "Clear Sky").
+        /// </summary>
+        public Dictionary<string, string> FactionDisplayNames { get; }
         // stalker-en-changes end
 
         public BandsManagingBoundUserInterfaceState(
@@ -68,9 +108,19 @@ namespace Content.Shared._Stalker.Bands
             List<WarZoneInfo>? warZones,
             List<BandPointsInfo>? bandPoints,
             List<BandShopItem>? shopItems,
-            string? playerFaction = null, // stalker-en-changes
-            List<string>? allFactions = null, // stalker-en-changes
-            List<STFactionRelationEntry>? factionRelations = null) // stalker-en-changes
+            // stalker-en-changes start
+            string? playerFaction = null,
+            List<string>? allFactions = null,
+            List<STFactionRelationEntry>? factionRelations = null,
+            List<STFactionRelationProposalEntry>? incomingProposals = null,
+            List<STFactionRelationProposalEntry>? outgoingProposals = null,
+            List<STFactionRelationFeeEntry>? fees = null,
+            int playerRoubles = 0,
+            Dictionary<string, float>? cooldownsRemaining = null,
+            bool hideRelationsTab = false,
+            int claimableFundsTotal = 0,
+            Dictionary<string, string>? factionDisplayNames = null)
+            // stalker-en-changes end
         {
             BandName = bandName;
             MaxMembers = maxMembers;
@@ -83,6 +133,14 @@ namespace Content.Shared._Stalker.Bands
             PlayerFaction = playerFaction;
             AllFactions = allFactions ?? new List<string>();
             FactionRelations = factionRelations ?? new List<STFactionRelationEntry>();
+            IncomingProposals = incomingProposals ?? new List<STFactionRelationProposalEntry>();
+            OutgoingProposals = outgoingProposals ?? new List<STFactionRelationProposalEntry>();
+            Fees = fees ?? new List<STFactionRelationFeeEntry>();
+            PlayerRoubles = playerRoubles;
+            CooldownsRemaining = cooldownsRemaining ?? new Dictionary<string, float>();
+            HideRelationsTab = hideRelationsTab;
+            ClaimableFundsTotal = claimableFundsTotal;
+            FactionDisplayNames = factionDisplayNames ?? new Dictionary<string, string>();
             // stalker-en-changes end
         }
     }
@@ -179,17 +237,62 @@ namespace Content.Shared._Stalker.Bands
     }
 
     // stalker-en-changes start
+
+    /// <summary>
+    /// Message from client to server to propose a faction relation change.
+    /// The server determines whether this is instant (escalation) or creates a bilateral proposal.
+    /// </summary>
     [Serializable, NetSerializable]
-    public sealed class BandsManagingSetRelationMessage : BoundUserInterfaceMessage
+    public sealed class BandsManagingProposeRelationMessage : BoundUserInterfaceMessage
     {
         public string TargetFaction { get; }
-        public int Relation { get; }
+        public int ProposedRelation { get; }
+        public string? CustomMessage { get; }
 
-        public BandsManagingSetRelationMessage(string targetFaction, int relation)
+        public BandsManagingProposeRelationMessage(string targetFaction, int proposedRelation, string? customMessage)
         {
             TargetFaction = targetFaction;
-            Relation = relation;
+            ProposedRelation = proposedRelation;
+            CustomMessage = customMessage;
         }
+    }
+
+    /// <summary>
+    /// Message from client to server to accept or reject an incoming faction relation proposal.
+    /// </summary>
+    [Serializable, NetSerializable]
+    public sealed class BandsManagingRespondProposalMessage : BoundUserInterfaceMessage
+    {
+        public string InitiatingFaction { get; }
+        public bool Accept { get; }
+
+        public BandsManagingRespondProposalMessage(string initiatingFaction, bool accept)
+        {
+            InitiatingFaction = initiatingFaction;
+            Accept = accept;
+        }
+    }
+
+    /// <summary>
+    /// Message from client to server to cancel an outgoing faction relation proposal.
+    /// </summary>
+    [Serializable, NetSerializable]
+    public sealed class BandsManagingCancelProposalMessage : BoundUserInterfaceMessage
+    {
+        public string TargetFaction { get; }
+
+        public BandsManagingCancelProposalMessage(string targetFaction)
+        {
+            TargetFaction = targetFaction;
+        }
+    }
+
+    /// <summary>
+    /// Message from client to server to claim all pending refund funds at Igor.
+    /// </summary>
+    [Serializable, NetSerializable]
+    public sealed class BandsManagingClaimFundsMessage : BoundUserInterfaceMessage
+    {
     }
     // stalker-en-changes end
 }

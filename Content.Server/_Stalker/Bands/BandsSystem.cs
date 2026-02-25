@@ -15,9 +15,11 @@ using Content.Shared.StatusIcon.Components;
 using Content.Server.Players.JobWhitelist;
 using Content.Shared._Stalker.Bands.Components;
 using Content.Server._Stalker.WarZone;
+using Content.Server._Stalker_EN.Currency; // stalker-en-changes
 using Content.Server._Stalker_EN.FactionRelations; // stalker-en-changes
 using Content.Shared._Stalker_EN.FactionRelations; // stalker-en-changes
 using Content.Shared.Hands.EntitySystems;
+using Content.Shared.UserInterface; // stalker-en-changes
 using Robust.Shared.Player;
 
 namespace Content.Server._Stalker.Bands
@@ -37,6 +39,7 @@ namespace Content.Server._Stalker.Bands
         [Dependency] private readonly IEntityManager _entityManager = default!;
         [Dependency] private readonly ISharedPlayerManager _player = default!;
         [Dependency] private readonly STFactionRelationsCartridgeSystem _factionRelations = default!; // stalker-en-changes
+        [Dependency] private readonly STCurrencySystem _currency = default!; // stalker-en-changes
 
         private sealed record ServerBandInfo(STBandPrototype Prototype, StalkerBand? DbBand = null);
 
@@ -47,6 +50,7 @@ namespace Content.Server._Stalker.Bands
         {
             base.Initialize();
 
+            SubscribeLocalEvent<BandsManagingComponent, ActivatableUIOpenAttemptEvent>(OnActivatableUIOpenAttempt); // stalker-en-changes
             SubscribeLocalEvent<BandsManagingComponent, BoundUIOpenedEvent>(HandleBoundUIOpen);
             SubscribeLocalEvent<BandsManagingComponent, ComponentStartup>(SubscribeUpdateUiState);
             SubscribeLocalEvent<BandsManagingComponent, BandsManagingAddMemberMessage>(OnAddMember);
@@ -55,7 +59,12 @@ namespace Content.Server._Stalker.Bands
             SubscribeLocalEvent<BandsComponent, ComponentInit>(OnInit);
 
             SubscribeLocalEvent<BandsManagingComponent, BandsManagingBuyItemMessage>(OnBuyItem);
-            SubscribeLocalEvent<BandsManagingComponent, BandsManagingSetRelationMessage>(OnSetRelation); // stalker-en-changes
+            // stalker-en-changes start
+            SubscribeLocalEvent<BandsManagingComponent, BandsManagingProposeRelationMessage>(OnProposeRelation);
+            SubscribeLocalEvent<BandsManagingComponent, BandsManagingRespondProposalMessage>(OnRespondProposal);
+            SubscribeLocalEvent<BandsManagingComponent, BandsManagingCancelProposalMessage>(OnCancelProposal);
+            SubscribeLocalEvent<BandsManagingComponent, BandsManagingClaimFundsMessage>(OnClaimFunds);
+            // stalker-en-changes end
 
             SubscribeLocalEvent<BandsComponent, ChangeBandEvent>(OnChange);
         }
@@ -66,6 +75,44 @@ namespace Content.Server._Stalker.Bands
             // UpdateUiState will attempt to find a session from the UI itself.
             UpdateUiState(ent);
         }
+
+        // stalker-en-changes start
+        /// <summary>
+        /// Prevents players from opening an Igor that belongs to a different faction.
+        /// </summary>
+        private void OnActivatableUIOpenAttempt(Entity<BandsManagingComponent> ent, ref ActivatableUIOpenAttemptEvent args)
+        {
+            // If this Igor has no faction set, allow anyone (generic Igor)
+            if (string.IsNullOrEmpty(ent.Comp.Faction))
+                return;
+
+            // Get player's band component
+            if (!TryComp<BandsComponent>(args.User, out var bandsComp) ||
+                string.IsNullOrEmpty(bandsComp.BandProto))
+            {
+                args.Cancel();
+                return;
+            }
+
+            // Resolve band name to faction name via prototype mapping
+            if (!_prototypeManager.TryIndex<STBandPrototype>(bandsComp.BandProto, out var bandProto))
+            {
+                args.Cancel();
+                return;
+            }
+
+            var playerFaction = _factionRelations.GetBandFactionName(bandProto.Name);
+
+            // Resolve aliases (e.g. "Rookies" -> "Loners")
+            if (!string.IsNullOrEmpty(playerFaction))
+                playerFaction = _factionRelations.ResolvePrimary(playerFaction);
+
+            var igorFaction = _factionRelations.ResolvePrimary(ent.Comp.Faction);
+
+            if (playerFaction != igorFaction)
+                args.Cancel();
+        }
+        // stalker-en-changes end
 
         private void HandleBoundUIOpen(Entity<BandsManagingComponent> ent, ref BoundUIOpenedEvent args)
         {
@@ -85,7 +132,7 @@ namespace Content.Server._Stalker.Bands
             return true;
         }
 
-        private async Task LoadShopItems(Entity<BandsManagingComponent> ent)
+        private void LoadShopItems(Entity<BandsManagingComponent> ent)
         {
             var (uid, component) = ent;
             if (_prototypeManager.TryIndex(component.ShopListingsProto, out var shopProto))
@@ -97,8 +144,6 @@ namespace Content.Server._Stalker.Bands
                 Logger.ErrorS("bands", $"Failed to load BandShopListingsPrototype with ID {component.ShopListingsProto} for entity {ToPrettyString(uid)}");
                 _loadedShopItems[uid] = new List<BandShopItem>(); // Ensure the key exists even if loading fails
             }
-            // No need for async void here, but keep Task for potential future async ops
-            await Task.CompletedTask;
         }
 
 
@@ -109,7 +154,7 @@ namespace Content.Server._Stalker.Bands
             // Ensure shop items are loaded for this component instance
             if (!_loadedShopItems.ContainsKey(uid))
             {
-                await LoadShopItems(ent); // Load items if not already loaded
+                LoadShopItems(ent); // Load items if not already loaded
             }
 
             if (actor == null)
@@ -187,13 +232,68 @@ namespace Content.Server._Stalker.Bands
             if (string.IsNullOrEmpty(playerFaction) && bandInfo != null)
                 playerFaction = _factionRelations.GetBandFactionName(bandInfo.Prototype.Name);
 
+            // Resolve aliases to primary (e.g. "Rookies" -> "Loners")
+            if (!string.IsNullOrEmpty(playerFaction))
+                playerFaction = _factionRelations.ResolvePrimary(playerFaction);
+
             var relationsState = _factionRelations.BuildUiState();
+            var hideRelationsTab = !string.IsNullOrEmpty(playerFaction) && _factionRelations.IsFactionRestricted(playerFaction);
+
+            // Filter aliases and restricted factions from Igor's dropdown
+            var allFactions = new List<string>();
+            foreach (var f in relationsState.FactionIds)
+            {
+                if (!_factionRelations.IsAlias(f) && !_factionRelations.IsFactionRestricted(f))
+                    allFactions.Add(f);
+            }
+
+            // Gather proposals, fees, balance, and cooldowns
+            var incomingProposals = new List<STFactionRelationProposalEntry>();
+            var outgoingProposals = new List<STFactionRelationProposalEntry>();
+            var fees = _factionRelations.GetFeeEntries();
+            var playerRoubles = actor.HasValue ? _currency.CountRoubles(actor.Value) : 0;
+            var cooldownsRemaining = new Dictionary<string, float>();
+
+            if (!string.IsNullOrEmpty(playerFaction))
+            {
+                var (incoming, outgoing) = _factionRelations.GetProposalsForFaction(playerFaction);
+                foreach (var p in incoming)
+                {
+                    incomingProposals.Add(new STFactionRelationProposalEntry(
+                        p.InitiatingFaction, p.TargetFaction, p.ProposedRelation, p.CustomMessage));
+                }
+
+                foreach (var p in outgoing)
+                {
+                    outgoingProposals.Add(new STFactionRelationProposalEntry(
+                        p.InitiatingFaction, p.TargetFaction, p.ProposedRelation, p.CustomMessage));
+                }
+
+                foreach (var f in allFactions)
+                {
+                    if (f == playerFaction)
+                        continue;
+
+                    var remaining = _factionRelations.GetCooldownRemaining(playerFaction, f);
+                    if (remaining > 0)
+                        cooldownsRemaining[f] = remaining;
+                }
+            }
+
+            // Load claimable refund funds for this faction
+            var claimableFundsTotal = 0;
+            if (!string.IsNullOrEmpty(playerFaction) && canManage)
+                claimableFundsTotal = await _dbManager.GetStalkerFactionClaimableFundsTotalAsync(playerFaction);
             // stalker-en-changes end
+
+            var factionDisplayNames = _factionRelations.GetDisplayNames(); // stalker-en-changes
 
             var state = new BandsManagingBoundUserInterfaceState(
                 bandName, maxMembers, members, canManage,
                 warZoneInfos, bandPointsInfos, shopItems,
-                playerFaction, relationsState.FactionIds, relationsState.Relations);
+                playerFaction, allFactions, relationsState.Relations,
+                incomingProposals, outgoingProposals, fees, playerRoubles, cooldownsRemaining,
+                hideRelationsTab, claimableFundsTotal, factionDisplayNames);
 
             _uiSystem.SetUiState(uid, BandsUiKey.Key, state);
         }
@@ -459,73 +559,163 @@ namespace Content.Server._Stalker.Bands
         /// </summary>
         private async Task<bool> CanPlayerManageBandAsync(NetUserId userId)
         {
+            return await TryGetManagingBandAsync(userId) != null;
+        }
+
+        /// <summary>
+        /// Checks if a player can manage their band and returns the band prototype if so.
+        /// Combines permission check with band resolution to avoid redundant DB calls.
+        /// </summary>
+        private async Task<STBandPrototype?> TryGetManagingBandAsync(NetUserId userId)
+        {
             // 1. Get the player's band component (STBandPrototype)
             if (!_playerManager.TryGetSessionById(userId, out var session) || session.AttachedEntity is not { } player)
-                return false;
+                return null;
             if (!EntityManager.TryGetComponent(player, out BandsComponent? bandsComp) || bandsComp == null)
-                return false;
+                return null;
 
             // 2. Get the band prototype
             if (!_prototypeManager.TryIndex<STBandPrototype>(bandsComp.BandProto, out var bandProto))
-                return false;
+                return null;
 
             // 3. Get the player's job (use first whitelisted job)
             var whitelistedJobs = await _dbManager.GetJobWhitelists(userId);
             var playerJob = whitelistedJobs.FirstOrDefault();
             if (playerJob == null)
-                return false;
+                return null;
 
             // 4. Find the rank ID for that job in the prototype's Hierarchy
             var found = bandProto.Hierarchy.FirstOrDefault(kvp => kvp.Value == playerJob);
             if (found.Value.Equals(default(ProtoId<JobPrototype>)))
-                return false;
+                return null;
 
             var rankId = found.Key;
 
             // 5. Compare to ManagingRankId
-            return rankId >= bandProto.ManagingRankId;
+            return rankId >= bandProto.ManagingRankId ? bandProto : null;
         }
 
         // stalker-en-changes start
-        private async void OnSetRelation(EntityUid uid, BandsManagingComponent component, BandsManagingSetRelationMessage msg)
+
+        /// <summary>
+        /// Resolves the player's faction from the component or their band prototype.
+        /// Uses TryGetManagingBandAsync to avoid redundant DB calls.
+        /// </summary>
+        private async Task<string?> ResolvePlayerFactionAsync(BandsManagingComponent component, NetUserId userId)
         {
-            if (!TryGetSession(msg.Actor, out var session))
-                return;
+            if (!string.IsNullOrEmpty(component.Faction))
+                return component.Faction;
 
-            if (!await CanPlayerManageBandAsync(session.UserId))
-                return;
+            var bandProto = await TryGetManagingBandAsync(userId);
+            if (bandProto == null)
+                return null;
 
-            // Use the NPC's configured faction if available, otherwise resolve from the player's band.
-            string? playerFaction = component.Faction;
-            if (string.IsNullOrEmpty(playerFaction))
+            return _factionRelations.GetBandFactionName(bandProto.Name);
+        }
+
+        private async void OnProposeRelation(EntityUid uid, BandsManagingComponent component, BandsManagingProposeRelationMessage msg)
+        {
+            try
             {
-                var bandInfo = await GetPlayerBandInfoAsync(session.UserId);
-                if (bandInfo == null)
+                if (!TryGetSession(msg.Actor, out var session))
                     return;
 
-                playerFaction = _factionRelations.GetBandFactionName(bandInfo.Prototype.Name);
+                var playerFaction = await ResolvePlayerFactionAsync(component, session.UserId);
+                if (playerFaction == null)
+                    return;
+
+                var relationType = (STFactionRelationType) msg.ProposedRelation;
+                if (!Enum.IsDefined(relationType))
+                    return;
+
+                _factionRelations.TryChangeRelation(
+                    msg.Actor,
+                    playerFaction,
+                    msg.TargetFaction,
+                    relationType,
+                    msg.CustomMessage);
+
+                // Refresh Igor UI for the actor
+                UpdateUiState((uid, component), msg.Actor);
             }
+            catch (Exception e)
+            {
+                Logger.ErrorS("bands", $"Error in OnProposeRelation: {e}");
+            }
+        }
 
-            if (playerFaction == null)
-                return;
+        private async void OnRespondProposal(EntityUid uid, BandsManagingComponent component, BandsManagingRespondProposalMessage msg)
+        {
+            try
+            {
+                if (!TryGetSession(msg.Actor, out var session))
+                    return;
 
-            // Validate the target faction exists in the defaults
-            var factionIds = _factionRelations.GetFactionIds();
-            if (factionIds == null || !factionIds.Contains(msg.TargetFaction))
-                return;
+                var playerFaction = await ResolvePlayerFactionAsync(component, session.UserId);
+                if (playerFaction == null)
+                    return;
 
-            // Prevent setting relation with own faction
-            if (playerFaction == msg.TargetFaction)
-                return;
+                if (msg.Accept)
+                    _factionRelations.AcceptProposal(msg.Actor, playerFaction, msg.InitiatingFaction);
+                else
+                    _factionRelations.RejectProposal(playerFaction, msg.InitiatingFaction);
 
-            var relationType = (STFactionRelationType) msg.Relation;
-            if (!Enum.IsDefined(relationType))
-                return;
+                UpdateUiState((uid, component), msg.Actor);
+            }
+            catch (Exception e)
+            {
+                Logger.ErrorS("bands", $"Error in OnRespondProposal: {e}");
+            }
+        }
 
-            _factionRelations.SetRelation(playerFaction, msg.TargetFaction, relationType);
+        private async void OnCancelProposal(EntityUid uid, BandsManagingComponent component, BandsManagingCancelProposalMessage msg)
+        {
+            try
+            {
+                if (!TryGetSession(msg.Actor, out var session))
+                    return;
 
-            // Refresh Igor UI for the actor
-            UpdateUiState((uid, component), msg.Actor);
+                var playerFaction = await ResolvePlayerFactionAsync(component, session.UserId);
+                if (playerFaction == null)
+                    return;
+
+                _factionRelations.CancelProposal(playerFaction, msg.TargetFaction);
+                UpdateUiState((uid, component), msg.Actor);
+            }
+            catch (Exception e)
+            {
+                Logger.ErrorS("bands", $"Error in OnCancelProposal: {e}");
+            }
+        }
+
+        private async void OnClaimFunds(EntityUid uid, BandsManagingComponent component, BandsManagingClaimFundsMessage msg)
+        {
+            try
+            {
+                if (!TryGetSession(msg.Actor, out var session))
+                    return;
+
+                if (!await CanPlayerManageBandAsync(session.UserId))
+                    return;
+
+                var playerFaction = await ResolvePlayerFactionAsync(component, session.UserId);
+                if (playerFaction == null)
+                    return;
+
+                var total = await _dbManager.GetStalkerFactionClaimableFundsTotalAsync(playerFaction);
+                if (total <= 0)
+                    return;
+
+                // Spawn roubles on the claiming player and clear the DB entries
+                _currency.AddRoubles(msg.Actor, total);
+                await _dbManager.DeleteAllStalkerFactionClaimableFundsByFactionAsync(playerFaction);
+
+                UpdateUiState((uid, component), msg.Actor);
+            }
+            catch (Exception e)
+            {
+                Logger.ErrorS("bands", $"Error in OnClaimFunds: {e}");
+            }
         }
         // stalker-en-changes end
 
