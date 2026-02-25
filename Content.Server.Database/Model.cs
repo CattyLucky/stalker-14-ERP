@@ -53,6 +53,8 @@ namespace Content.Server.Database
         public DbSet<StalkerFaction> StalkerFactions { get; set; } = null!; // stalker-changes
         public DbSet<StalkerZoneOwnership> StalkerZoneOwnerships { get; set; } = null!; // stalker-changes
         public DbSet<StalkerFactionRelation> StalkerFactionRelations { get; set; } = null!; // stalker-en-changes
+        public DbSet<StalkerFactionRelationProposal> StalkerFactionRelationProposals { get; set; } = null!; // stalker-en-changes
+        public DbSet<StalkerFactionClaimableFunds> StalkerFactionClaimableFunds { get; set; } = null!; // stalker-en-changes
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Preference>()
@@ -368,6 +370,9 @@ namespace Content.Server.Database
             // stalker-en-changes-start
             modelBuilder.Entity<StalkerFactionRelation>()
                 .HasKey(r => new { r.FactionA, r.FactionB });
+
+            modelBuilder.Entity<StalkerFactionRelationProposal>()
+                .HasKey(p => new { p.InitiatingFaction, p.TargetFaction });
             // stalker-en-changes-end
 
             // Changes for modern HWID integration
@@ -1511,6 +1516,79 @@ namespace Content.Server.Database
         [Required]
         public int RelationType { get; set; }
     }
+
+    // stalker-en-changes-start
+    /// <summary>
+    /// Stores a pending faction relation proposal that requires bilateral confirmation.
+    /// Key: (InitiatingFaction, TargetFaction) -- direction matters.
+    /// </summary>
+    public sealed class StalkerFactionRelationProposal
+    {
+        [Required]
+        public string InitiatingFaction { get; set; } = default!;
+
+        [Required]
+        public string TargetFaction { get; set; } = default!;
+
+        /// <summary>
+        /// The proposed relation type (maps to STFactionRelationType enum).
+        /// </summary>
+        [Required]
+        public int ProposedRelationType { get; set; }
+
+        /// <summary>
+        /// Optional custom message from the initiating faction's leader (max ~250 chars).
+        /// </summary>
+        public string? CustomMessage { get; set; }
+
+        /// <summary>
+        /// UTC timestamp when the proposal was created.
+        /// </summary>
+        [Required]
+        public DateTime CreatedAt { get; set; }
+
+        /// <summary>
+        /// The fee in roubles paid by the initiating faction's leader when the proposal was created.
+        /// Used to calculate partial refunds on rejection, cancellation, or expiration.
+        /// </summary>
+        [Required]
+        public int FeePaid { get; set; }
+    }
+
+    /// <summary>
+    /// Stores claimable funds deposited as partial refunds from rejected, cancelled, or expired proposals.
+    /// Faction leaders can claim these funds at the Igor NPC. Persists across rounds.
+    /// </summary>
+    public sealed class StalkerFactionClaimableFunds
+    {
+        [Key]
+        public int Id { get; set; }
+
+        /// <summary>
+        /// The faction that can claim these funds (primary faction name).
+        /// </summary>
+        [Required]
+        public string Faction { get; set; } = default!;
+
+        /// <summary>
+        /// Amount of roubles available to claim.
+        /// </summary>
+        [Required]
+        public int Amount { get; set; }
+
+        /// <summary>
+        /// Human-readable reason for the refund (e.g. "Proposal to Duty rejected").
+        /// </summary>
+        [Required]
+        public string Reason { get; set; } = default!;
+
+        /// <summary>
+        /// UTC timestamp when the refund was deposited.
+        /// </summary>
+        [Required]
+        public DateTime CreatedAt { get; set; }
+    }
+    // stalker-en-changes-end
 
     #endregion
 }

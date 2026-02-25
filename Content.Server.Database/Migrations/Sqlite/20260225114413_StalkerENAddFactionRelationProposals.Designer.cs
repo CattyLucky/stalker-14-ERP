@@ -3,6 +3,7 @@ using System;
 using Content.Server.Database;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Content.Server.Database.Migrations.Sqlite
 {
     [DbContext(typeof(SqliteServerDbContext))]
-    partial class SqliteServerDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260225114413_StalkerENAddFactionRelationProposals")]
+    partial class StalkerENAddFactionRelationProposals
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.1");
@@ -1351,37 +1354,6 @@ namespace Content.Server.Database.Migrations.Sqlite
                     b.ToTable("stalker_factions", (string)null);
                 });
 
-            modelBuilder.Entity("Content.Server.Database.StalkerFactionClaimableFunds", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
-                        .HasColumnName("stalker_faction_claimable_funds_id");
-
-                    b.Property<int>("Amount")
-                        .HasColumnType("INTEGER")
-                        .HasColumnName("amount");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT")
-                        .HasColumnName("created_at");
-
-                    b.Property<string>("Faction")
-                        .IsRequired()
-                        .HasColumnType("TEXT")
-                        .HasColumnName("faction");
-
-                    b.Property<string>("Reason")
-                        .IsRequired()
-                        .HasColumnType("TEXT")
-                        .HasColumnName("reason");
-
-                    b.HasKey("Id")
-                        .HasName("PK_stalker_faction_claimable_funds");
-
-                    b.ToTable("stalker_faction_claimable_funds", (string)null);
-                });
-
             modelBuilder.Entity("Content.Server.Database.StalkerFactionRelation", b =>
                 {
                     b.Property<string>("FactionA")
@@ -1419,10 +1391,6 @@ namespace Content.Server.Database.Migrations.Sqlite
                     b.Property<string>("CustomMessage")
                         .HasColumnType("TEXT")
                         .HasColumnName("custom_message");
-
-                    b.Property<int>("FeePaid")
-                        .HasColumnType("INTEGER")
-                        .HasColumnName("fee_paid");
 
                     b.Property<int>("ProposedRelationType")
                         .HasColumnType("INTEGER")
