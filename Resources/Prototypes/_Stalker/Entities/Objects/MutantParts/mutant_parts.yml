@@ -215,7 +215,7 @@
 - type: entity
   parent: BaseMutantPart
   id: MutantPartControllerBrain
-  name: burer brain
+  name: controller brain
   components:
     - type: STWeight
       self: 3
