@@ -1,4 +1,5 @@
 using System.Numerics;
+using Content.Shared.Chat.Prototypes;
 using Content.Shared.Whitelist;
 using Robust.Shared.Audio;
 using Robust.Shared.GameStates;
@@ -15,6 +16,9 @@ public sealed partial class RitualChasmComponent : Component
 {
     [DataField, ViewVariables(VVAccess.ReadWrite)]
     public TimeSpan RelocatedStunDuration = TimeSpan.Zero;
+
+    [DataField, ViewVariables(VVAccess.ReadWrite)]
+    public TimeSpan RelocatedFlashDuration = TimeSpan.Zero;
 
     [DataField, ViewVariables(VVAccess.ReadWrite)]
     public float ThrowForce = 25f;
@@ -41,6 +45,12 @@ public sealed partial class RitualChasmComponent : Component
 
     [DataField, ViewVariables(VVAccess.ReadWrite)]
     public SoundSpecifier? FallSound = null;
+
+    /// <summary>
+    ///     Emote played by something falling into the chasm if alive and can emote.
+    /// </summary>
+    [DataField, ViewVariables(VVAccess.ReadWrite)]
+    public ProtoId<EmotePrototype>? FallEmote = null;
 
     /// <summary>
     ///     Sound played after something is relocated.

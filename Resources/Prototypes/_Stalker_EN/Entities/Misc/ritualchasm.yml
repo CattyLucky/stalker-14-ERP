@@ -17,21 +17,23 @@
       collection: StalkerHorrorSound
     relocatedLocalSound:
       params:
-        volume: 5
-        pitch: 0.5
-      path: /Audio/Effects/Gasp/gasp_male2.ogg
+        volume: 8
+        pitch: 0.7
+      path: /Audio/_Stalker_EN/Effects/psivoice3.ogg #/Audio/Effects/Gasp/gasp_male2.ogg
     fallSound:
       params:
         volume: 6
       path: /Audio/_Stalker_EN/Effects/fall_impact.ogg
+    fallEmote: Scream
     relocatedLocalPopup: ritual-chasm-relocated-popup
     relocatedStunDuration: 10
+    relocatedFlashDuration: 10
     throwForce: 15
     rewardedPerTier: 1.25
     rewardedPerTooth: 1.75
     relocatableEntities:
       components:
-      - TeethPull
+      - Body
     punishedEntities:
       tags:
       - STFleshRelated

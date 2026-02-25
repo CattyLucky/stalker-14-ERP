@@ -1,7 +1,10 @@
 using System.Numerics;
+using Content.Shared._Stalker.Dizzy;
 using Content.Shared.ActionBlocker;
 using Content.Shared.Chasm;
+using Content.Shared.Chat;
 using Content.Shared.Flash;
+using Content.Shared.Mobs.Systems;
 using Content.Shared.Movement.Pulling.Components;
 using Content.Shared.Movement.Pulling.Systems;
 using Content.Shared.Popups;
@@ -30,6 +33,9 @@ public abstract class SharedRitualChasmSystem : EntitySystem
     [Dependency] private readonly SharedPopupSystem _popupSystem = default!;
     [Dependency] private readonly SharedStunSystem _stunSystem = default!;
     [Dependency] private readonly SharedFlashSystem _flashSystem = default!;
+    [Dependency] private readonly SharedDizzySystem _dizzySystem = default!;
+    [Dependency] private readonly SharedChatSystem _chatSystem = default!;
+    [Dependency] private readonly MobStateSystem _mobStateSystem = default!;
     [Dependency] private readonly EntityWhitelistSystem _entityWhitelistSystem = default!;
     [Dependency] private readonly ActionBlockerSystem _actionBlockerSystem = default!;
     [Dependency] private readonly ThrowingSystem _throwingSystem = default!;
@@ -86,8 +92,7 @@ public abstract class SharedRitualChasmSystem : EntitySystem
                 _audioSystem.PlayPvs(ritualChasmComponent.ThrowSound, uid);
             }
 
-            if (_netManager.IsServer && // its horrible, i am aware
-                ritualChasmComponent.FallQueue.Count != 0 &&
+            if (ritualChasmComponent.FallQueue.Count != 0 &&
                 ritualChasmComponent.FallQueue.Peek().Item2 < GameTiming.CurTime)
             {
                 var (uid, _) = ritualChasmComponent.FallQueue.Dequeue();
@@ -114,10 +119,14 @@ public abstract class SharedRitualChasmSystem : EntitySystem
 
                 // play only for the relocated
                 _audioSystem.PlayGlobal(ritualChasmComponent.RelocatedLocalSound, uid);
-                _popupSystem.PopupEntity(Loc.GetString(ritualChasmComponent.RelocatedLocalPopup), uid, uid, PopupType.LargeCaution);
+
+                var popupLoc = Loc.GetString(ritualChasmComponent.RelocatedLocalPopup);
+                _popupSystem.PopupEntity(popupLoc, uid, uid, PopupType.LargeCaution);
+                DoLocalAnnouncement(uid, popupLoc);
 
                 _stunSystem.TryKnockdown(uid, ritualChasmComponent.RelocatedStunDuration);
-                _flashSystem.Flash(uid, null, null, ritualChasmComponent.RelocatedStunDuration, 0f, displayPopup: false);
+                _dizzySystem.TryApplyDizziness(uid, (float)ritualChasmComponent.RelocatedFlashDuration.TotalSeconds);
+                _flashSystem.Flash(uid, null, null, ritualChasmComponent.RelocatedFlashDuration, 0f, displayPopup: false);
             }
         }
     }
@@ -182,17 +191,26 @@ public abstract class SharedRitualChasmSystem : EntitySystem
         AddComp(uid, fallingComponent);
         _actionBlockerSystem.UpdateCanMove(uid);
 
-        ritualChasmEntity.Comp.FallQueue.Enqueue((uid, GameTiming.CurTime + FallTime));
+        if (_netManager.IsServer) // i really hate prediction
+            ritualChasmEntity.Comp.FallQueue.Enqueue((uid, GameTiming.CurTime + FallTime));
+
         HandleReturnedEntity(uid, ritualChasmEntity);
 
         PhysicsSystem.SetLinearVelocity(uid, Vector2.Zero);
         _transformSystem.SetCoordinates(uid, Transform(ritualChasmEntity.Owner).Coordinates);
 
         _audioSystem.PlayPredicted(ritualChasmEntity.Comp.FallSound, ritualChasmEntity.Owner, uid);
+
         _pointLightSystem.RemoveLightDeferred(uid);
+        _stunSystem.TryKnockdown(uid, FallTime);
+        if (ritualChasmEntity.Comp.FallEmote is { } fallEmote &&
+            _mobStateSystem.IsAlive(uid))
+            _chatSystem.TryEmoteWithChat(uid, fallEmote);
     }
 
     protected abstract void PunishEntity(EntityUid uid);
 
     protected abstract void HandleReturnedEntity(EntityUid uid, Entity<RitualChasmComponent> ritualChasmEntity);
+
+    protected virtual void DoLocalAnnouncement(EntityUid uid, string message) { }
 }

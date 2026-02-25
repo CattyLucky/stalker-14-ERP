@@ -1,23 +1,30 @@
 using Content.Server._Stalker.Teeth;
 using Content.Server._Stalker.ZoneArtifact.Components.Spawner;
 using Content.Server._Stalker_EN.Emission;
+using Content.Server.Chat.Managers;
 using Content.Shared._Stalker.Teeth;
 using Content.Shared._Stalker.ZoneArtifact.Components;
 using Content.Shared._Stalker_EN.RitualChasm;
+using Content.Shared.Chat;
 using Robust.Server.GameObjects;
+using Robust.Shared.Player;
 using Robust.Shared.Prototypes;
+using Robust.Shared.Utility;
 
 namespace Content.Server._Stalker_EN.RitualChasm;
 
 public sealed class RitualChasmSystem : SharedRitualChasmSystem
 {
     [Dependency] private readonly IPrototypeManager _prototypeManager = default!;
+    [Dependency] private readonly IChatManager _chatManager = default!;
     [Dependency] private readonly TransformSystem _transformSystem = default!;
     [Dependency] private readonly EmissionLightningSystem _emissionLightningSystem = default!;
     [Dependency] private readonly TeethPullingSystem _teethPullingSystem = default!;
+    [Dependency] private readonly ActorSystem _actorSystem = default!;
 
     protected override void PunishEntity(EntityUid uid)
     {
+        EnsureComp<DontStartCollideWithRitualChasmOnceComponent>(uid); // So that it doesnt trigger twice or something
         _emissionLightningSystem.SpawnLightningImmediately(
             "EmissionLightningEffect",
             _transformSystem.GetMapCoordinates(uid),
@@ -98,5 +105,15 @@ public sealed class RitualChasmSystem : SharedRitualChasmSystem
         }
 
         return;
+    }
+
+    protected override void DoLocalAnnouncement(EntityUid uid, string message)
+    {
+        base.DoLocalAnnouncement(uid, message);
+        if (!_actorSystem.TryGetSession(uid, out var session))
+            return;
+
+        var wrappedMessage = Loc.GetString("chat-manager-server-wrap-message", ("message", FormattedMessage.EscapeText(message)));
+        _chatManager.ChatMessageToOne(ChatChannel.Server, message, wrappedMessage, default, false, session!.Channel, colorOverride: Color.Sienna);
     }
 }
