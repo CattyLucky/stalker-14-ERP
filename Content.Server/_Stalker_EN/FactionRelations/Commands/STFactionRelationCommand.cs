@@ -3,27 +3,28 @@ using Content.Shared._Stalker_EN.FactionRelations;
 using Content.Shared.Administration;
 using Robust.Shared.Console;
 using Robust.Shared.IoC;
-using Robust.Shared.Prototypes;
 
 namespace Content.Server._Stalker_EN.FactionRelations.Commands;
 
 /// <summary>
-/// Admin command to view and modify faction relations.
+/// Admin command to view and modify faction relations and proposals.
 /// </summary>
 [AdminCommand(AdminFlags.Admin)]
 public sealed class STFactionRelationCommand : IConsoleCommand
 {
     [Dependency] private readonly IEntityManager _entityManager = default!;
-    [Dependency] private readonly IPrototypeManager _prototypeManager = default!;
 
     public string Command => "st_factionrelation";
 
     public string Description => "Admin command to view and modify faction relations.";
 
     public string Help => "Usage:\n" +
-                          "st_factionrelation set <factionA> <factionB> <alliance|neutral|hostile|war>\n" +
+                          "st_factionrelation set <factionA> <factionB> <alliance|neutral|hostile|war> [--broadcast]\n" +
                           "st_factionrelation get <factionA> <factionB>\n" +
-                          "st_factionrelation reset";
+                          "st_factionrelation reset\n" +
+                          "st_factionrelation proposals list\n" +
+                          "st_factionrelation proposals clear\n" +
+                          "st_factionrelation proposals delete <initiating> <target>";
 
     public void Execute(IConsoleShell shell, string argStr, string[] args)
     {
@@ -46,6 +47,9 @@ public sealed class STFactionRelationCommand : IConsoleCommand
             case "reset":
                 HandleReset(shell, system);
                 break;
+            case "proposals":
+                HandleProposals(shell, args, system);
+                break;
             default:
                 shell.WriteLine(Help);
                 break;
@@ -54,15 +58,23 @@ public sealed class STFactionRelationCommand : IConsoleCommand
 
     private void HandleSet(IConsoleShell shell, string[] args, STFactionRelationsCartridgeSystem system)
     {
-        if (args.Length != 4)
+        if (args.Length < 4)
         {
-            shell.WriteLine("Usage: st_factionrelation set <factionA> <factionB> <alliance|neutral|hostile|war>");
+            shell.WriteLine("Usage: st_factionrelation set <factionA> <factionB> <alliance|neutral|hostile|war> [--broadcast]");
             return;
         }
 
         var factionA = args[1];
         var factionB = args[2];
         var relationStr = args[3].ToLowerInvariant();
+
+        // Check for --broadcast flag in remaining args
+        var broadcast = false;
+        for (var i = 4; i < args.Length; i++)
+        {
+            if (args[i] == "--broadcast")
+                broadcast = true;
+        }
 
         var factions = system.GetFactionIds();
         if (factions == null)
@@ -95,8 +107,8 @@ public sealed class STFactionRelationCommand : IConsoleCommand
             return;
         }
 
-        system.SetRelation(factionA, factionB, relation);
-        shell.WriteLine($"Set relation {factionA} <-> {factionB} to {relation}");
+        system.SetRelation(factionA, factionB, relation, broadcast: broadcast);
+        shell.WriteLine($"Set relation {factionA} <-> {factionB} to {relation}{(broadcast ? " (announced)" : " (silent)")}");
     }
 
     private void HandleGet(IConsoleShell shell, string[] args, STFactionRelationsCartridgeSystem system)
@@ -117,7 +129,62 @@ public sealed class STFactionRelationCommand : IConsoleCommand
     private static void HandleReset(IConsoleShell shell, STFactionRelationsCartridgeSystem system)
     {
         system.ResetAllRelations();
-        shell.WriteLine("All faction relation overrides cleared. Reverted to YAML defaults.");
+        shell.WriteLine("All faction relation overrides and proposals cleared. Reverted to YAML defaults (all Neutral).");
+    }
+
+    private void HandleProposals(IConsoleShell shell, string[] args, STFactionRelationsCartridgeSystem system)
+    {
+        if (args.Length < 2)
+        {
+            shell.WriteLine("Usage: st_factionrelation proposals <list|clear|delete>");
+            return;
+        }
+
+        switch (args[1])
+        {
+            case "list":
+            {
+                var factions = system.GetFactionIds();
+                if (factions == null)
+                {
+                    shell.WriteError("Failed to load faction defaults prototype.");
+                    return;
+                }
+
+                var anyFound = false;
+                foreach (var faction in factions)
+                {
+                    var (incoming, outgoing) = system.GetProposalsForFaction(faction);
+                    foreach (var p in outgoing)
+                    {
+                        shell.WriteLine($"  {p.InitiatingFaction} -> {p.TargetFaction}: proposes {p.ProposedRelation}" +
+                                        (p.CustomMessage != null ? $" (\"{p.CustomMessage}\")" : ""));
+                        anyFound = true;
+                    }
+                }
+
+                if (!anyFound)
+                    shell.WriteLine("No pending proposals.");
+                break;
+            }
+            case "clear":
+                system.ResetAllRelations(); // This also clears proposals
+                shell.WriteLine("All proposals cleared (along with relation overrides).");
+                break;
+            case "delete":
+                if (args.Length < 4)
+                {
+                    shell.WriteLine("Usage: st_factionrelation proposals delete <initiating> <target>");
+                    return;
+                }
+
+                system.CancelProposal(args[2], args[3]);
+                shell.WriteLine($"Deleted proposal from {args[2]} to {args[3]} (if it existed).");
+                break;
+            default:
+                shell.WriteLine("Usage: st_factionrelation proposals <list|clear|delete>");
+                break;
+        }
     }
 
     private static bool TryParseRelation(string str, out STFactionRelationType relation)
@@ -138,7 +205,7 @@ public sealed class STFactionRelationCommand : IConsoleCommand
     {
         if (args.Length == 1)
         {
-            return CompletionResult.FromOptions(new[] { "set", "get", "reset" });
+            return CompletionResult.FromOptions(new[] { "set", "get", "reset", "proposals" });
         }
 
         if (args[0] is "set" or "get")
@@ -155,6 +222,24 @@ public sealed class STFactionRelationCommand : IConsoleCommand
             {
                 return CompletionResult.FromOptions(new[] { "alliance", "neutral", "hostile", "war" });
             }
+
+            if (args[0] == "set" && args.Length == 5)
+            {
+                return CompletionResult.FromOptions(new[] { "--broadcast" });
+            }
+        }
+
+        if (args[0] == "proposals" && args.Length == 2)
+        {
+            return CompletionResult.FromOptions(new[] { "list", "clear", "delete" });
+        }
+
+        if (args[0] == "proposals" && args[1] == "delete" && args.Length is 3 or 4)
+        {
+            var system = _entityManager.System<STFactionRelationsCartridgeSystem>();
+            var factions = system.GetFactionIds();
+            if (factions != null)
+                return CompletionResult.FromOptions(factions);
         }
 
         return CompletionResult.Empty;
