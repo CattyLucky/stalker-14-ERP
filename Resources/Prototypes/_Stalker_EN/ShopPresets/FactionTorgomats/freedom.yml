@@ -224,6 +224,17 @@
       priority: 8
       items:
           # Cloaks
+        ClothingCloakStalker: 30
+        ClothingCloakBeige: 1000
+        ClothingCloakBlack: 1000
+        ClothingCloakBrown: 1000
+        ClothingCloakGreen: 1000
+        ClothingCloakNavy: 1000
+        ClothingCloakShortCoverBlack: 1000
+        ClothingOuterCoatDoshdevik: 100 # T1
+        ClothingOuterCoatStalker: 1000
+        ClothingOuterCoatLoyalistLight: 2500
+        ClothingOuterCoatLoyalist: 3000
         STClothingCapeFreedomChain: 2500 # T4
           # Gasmasks
         ClothingMaskGasFreedom: 100 # T1
