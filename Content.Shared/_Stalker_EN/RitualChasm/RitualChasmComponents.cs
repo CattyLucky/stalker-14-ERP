@@ -11,7 +11,6 @@ namespace Content.Shared._Stalker_EN.RitualChasm;
 ///         reward that matches with tier
 /// </summary>
 [RegisterComponent, NetworkedComponent]
-[AutoGenerateComponentState]
 public sealed partial class RitualChasmComponent : Component
 {
     [DataField, ViewVariables(VVAccess.ReadWrite)]
@@ -76,8 +75,7 @@ public sealed partial class RitualChasmComponent : Component
     /// <summary>
     ///     Things currently falling into the chasm, and their expected time of total descent.
     /// </summary>
-    [AutoNetworkedField]
-    public Queue<(NetEntity, TimeSpan)> FallQueue = new();
+    public Queue<(EntityUid, TimeSpan)> FallQueue = new();
 
     /// <summary>
     ///     It is assumed that first entity to leave will have lowest time-value,

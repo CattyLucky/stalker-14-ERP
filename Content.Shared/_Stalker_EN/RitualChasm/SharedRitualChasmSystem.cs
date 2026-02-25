@@ -9,6 +9,7 @@ using Content.Shared.Stunnable;
 using Content.Shared.Throwing;
 using Content.Shared.Whitelist;
 using Robust.Shared.Audio.Systems;
+using Robust.Shared.Network;
 using Robust.Shared.Physics.Events;
 using Robust.Shared.Physics.Systems;
 using Robust.Shared.Player;
@@ -22,6 +23,7 @@ public abstract class SharedRitualChasmSystem : EntitySystem
     [Dependency] protected readonly IGameTiming GameTiming = default!;
     [Dependency] protected readonly IRobustRandom RobustRandom = default!;
     [Dependency] protected readonly SharedPhysicsSystem PhysicsSystem = default!;
+    [Dependency] private readonly INetManager _netManager = default!;
     [Dependency] private readonly SharedTransformSystem _transformSystem = default!;
     [Dependency] private readonly SharedAudioSystem _audioSystem = default!;
     [Dependency] private readonly SharedPopupSystem _popupSystem = default!;
@@ -83,22 +85,22 @@ public abstract class SharedRitualChasmSystem : EntitySystem
                 _audioSystem.PlayPvs(ritualChasmComponent.ThrowSound, uid);
             }
 
-            if (ritualChasmComponent.FallQueue.Count != 0 &&
+            if (_netManager.IsServer && // its horrible, i am aware
+                ritualChasmComponent.FallQueue.Count != 0 &&
                 ritualChasmComponent.FallQueue.Peek().Item2 < GameTiming.CurTime)
             {
-                var (netUid, _) = ritualChasmComponent.FallQueue.Dequeue();
-                var uid = GetEntity(netUid);
+                var (uid, _) = ritualChasmComponent.FallQueue.Dequeue();
 
                 if (!_entityWhitelistSystem.IsWhitelistPass(ritualChasmComponent.RelocatableEntities, uid))
                 {
-                    PredictedQueueDel(uid);
+                    QueueDel(uid);
                     continue;
                 }
 
                 _audioSystem.PlayGlobal(ritualChasmComponent.RelocateSound, Filter.Broadcast(), true);
                 if (_exitPoints.Count == 0)
                 {
-                    PredictedQueueDel(uid);
+                    QueueDel(uid);
                     Log.Error($"Entity {ToPrettyString(uid)} being sacrificed to ritual chasm was deleted, as no exit points existed. MAP THEM!!!");
                     continue;
                 }
@@ -111,9 +113,9 @@ public abstract class SharedRitualChasmSystem : EntitySystem
 
                 // play only for the relocated
                 _audioSystem.PlayGlobal(ritualChasmComponent.RelocatedLocalSound, uid);
-                _popupSystem.PopupClient(ritualChasmComponent.RelocatedLocalPopup, uid, uid, PopupType.LargeCaution);
+                _popupSystem.PopupEntity(ritualChasmComponent.RelocatedLocalPopup, uid, uid, PopupType.LargeCaution);
 
-                _stunSystem.AddKnockdownTime(uid, ritualChasmComponent.RelocatedStunDuration);
+                _stunSystem.TryKnockdown(uid, ritualChasmComponent.RelocatedStunDuration);
                 _flashSystem.Flash(uid, null, null, ritualChasmComponent.RelocatedStunDuration, 0f, displayPopup: false);
             }
         }
@@ -159,7 +161,6 @@ public abstract class SharedRitualChasmSystem : EntitySystem
         }
 
         MakeEntityEternallyFall(fallingUid, entity);
-        Dirty(entity);
     }
 
     protected Vector2 GetUnitVectorFrom(EntityUid from, EntityUid to)
@@ -180,7 +181,7 @@ public abstract class SharedRitualChasmSystem : EntitySystem
         AddComp(uid, fallingComponent);
         _actionBlockerSystem.UpdateCanMove(uid);
 
-        ritualChasmEntity.Comp.FallQueue.Enqueue((GetNetEntity(uid), GameTiming.CurTime + FallTime));
+        ritualChasmEntity.Comp.FallQueue.Enqueue((uid, GameTiming.CurTime + FallTime));
         HandleReturnedEntity(uid, ritualChasmEntity);
 
         PhysicsSystem.SetLinearVelocity(uid, Vector2.Zero);

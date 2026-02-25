@@ -11,6 +11,6 @@
   - type: AmbientSound
     enabled: true
     range: 30
-    volume: -6
+    volume: 5
     sound:
       path: /Audio/_Stalker_EN/Effects/ritualpit.ogg

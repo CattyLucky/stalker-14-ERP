@@ -23,7 +23,7 @@
     fallSound:
       params:
         volume: 6
-      path: /Audio/_Stalker_EN/Effeccts/fall_impact.ogg
+      path: /Audio/_Stalker_EN/Effects/fall_impact.ogg
     relocatedLocalPopup: ritual-chasm-relocated-popup
     relocatedStunDuration: 10
     throwForce: 15
