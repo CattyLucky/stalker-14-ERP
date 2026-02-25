@@ -26,6 +26,7 @@ public abstract class SharedRitualChasmSystem : EntitySystem
     [Dependency] private readonly INetManager _netManager = default!;
     [Dependency] private readonly SharedTransformSystem _transformSystem = default!;
     [Dependency] private readonly SharedAudioSystem _audioSystem = default!;
+    [Dependency] private readonly SharedPointLightSystem _pointLightSystem = default!;
     [Dependency] private readonly SharedPopupSystem _popupSystem = default!;
     [Dependency] private readonly SharedStunSystem _stunSystem = default!;
     [Dependency] private readonly SharedFlashSystem _flashSystem = default!;
@@ -34,7 +35,7 @@ public abstract class SharedRitualChasmSystem : EntitySystem
     [Dependency] private readonly ThrowingSystem _throwingSystem = default!;
     [Dependency] private readonly PullingSystem _pullingSystem = default!;
 
-    protected static readonly TimeSpan FallTime = TimeSpan.FromSeconds(3.5d);
+    protected static readonly TimeSpan FallTime = TimeSpan.FromSeconds(1.9d);
 
     private HashSet<EntityUid> _exitPoints = new();
 
@@ -113,7 +114,7 @@ public abstract class SharedRitualChasmSystem : EntitySystem
 
                 // play only for the relocated
                 _audioSystem.PlayGlobal(ritualChasmComponent.RelocatedLocalSound, uid);
-                _popupSystem.PopupEntity(ritualChasmComponent.RelocatedLocalPopup, uid, uid, PopupType.LargeCaution);
+                _popupSystem.PopupEntity(Loc.GetString(ritualChasmComponent.RelocatedLocalPopup), uid, uid, PopupType.LargeCaution);
 
                 _stunSystem.TryKnockdown(uid, ritualChasmComponent.RelocatedStunDuration);
                 _flashSystem.Flash(uid, null, null, ritualChasmComponent.RelocatedStunDuration, 0f, displayPopup: false);
@@ -187,7 +188,8 @@ public abstract class SharedRitualChasmSystem : EntitySystem
         PhysicsSystem.SetLinearVelocity(uid, Vector2.Zero);
         _transformSystem.SetCoordinates(uid, Transform(ritualChasmEntity.Owner).Coordinates);
 
-        _audioSystem.PlayPvs(ritualChasmEntity.Comp.FallSound, ritualChasmEntity.Owner);
+        _audioSystem.PlayPredicted(ritualChasmEntity.Comp.FallSound, ritualChasmEntity.Owner, uid);
+        _pointLightSystem.RemoveLightDeferred(uid);
     }
 
     protected abstract void PunishEntity(EntityUid uid);

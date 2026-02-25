@@ -59,7 +59,7 @@ public sealed partial class RitualChasmComponent : Component
     ///     Locale for popup shown for thing being relocated.
     /// </summary>
     [DataField, ViewVariables(VVAccess.ReadWrite)]
-    public string? RelocatedLocalPopup = null;
+    public string RelocatedLocalPopup = string.Empty;
 
     /// <summary>
     ///     If an entity is falling, it will be
