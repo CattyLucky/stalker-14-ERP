@@ -858,5 +858,13 @@
   id: 97
   time: '2026-02-25T20:49:04.781919+00:00'
   url: https://github.com/coolmankid12345/stalker-14-EN/pull/513
+- author: RebelledCombine
+  changes:
+  - message: 'Modified the visuals of the following duty suits: T2 plate vest, T3
+      SEVA, T2 zarya/sunrise, T3 ps5m'
+    type: Tweak
+  id: 98
+  time: '2026-02-25T20:50:54.745082+00:00'
+  url: https://github.com/coolmankid12345/stalker-14-EN/pull/533
 Name: Stalker
 Order: -1
