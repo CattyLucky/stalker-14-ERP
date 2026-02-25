@@ -29,5 +29,5 @@ public sealed partial class STCCVars
     ///     All proposals also expire on round restart regardless of this value.
     /// </summary>
     public static readonly CVarDef<int> FactionRelationsProposalExpirationSeconds =
-        CVarDef.Create("stalkeren.faction_relations.proposal_expiration_seconds", 2700, CVar.SERVERONLY);
+        CVarDef.Create("stalkeren.faction_relations.proposal_expiration_seconds", 3600, CVar.SERVERONLY);
 }
