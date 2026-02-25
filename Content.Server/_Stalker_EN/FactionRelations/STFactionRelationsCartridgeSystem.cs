@@ -32,8 +32,9 @@ public sealed class STFactionRelationsCartridgeSystem : EntitySystem
     [Dependency] private readonly IServerDbManager _dbManager = default!;
     [Dependency] private readonly IPrototypeManager _protoManager = default!;
     [Dependency] private readonly IRobustRandom _random = default!;
+    [Dependency] private readonly SharedSTFactionResolutionSystem _factionResolution = default!;
 
-    private static readonly ProtoId<STFactionRelationDefaultsPrototype> DefaultsProtoId = "Default";
+    private static ProtoId<STFactionRelationDefaultsPrototype> DefaultsProtoId => SharedSTFactionResolutionSystem.DefaultsProtoId;
 
     /// <summary>
     /// In-memory cache of DB overrides. Key: normalized (factionA, factionB) pair.
@@ -235,7 +236,6 @@ public sealed class STFactionRelationsCartridgeSystem : EntitySystem
         if (!_protoManager.TryIndex(DefaultsProtoId, out var proto))
             return;
 
-        // Build alias maps from faction groups
         foreach (var (primary, aliases) in proto.FactionGroups)
         {
             _primaryToAliases[primary] = aliases;
@@ -245,7 +245,6 @@ public sealed class STFactionRelationsCartridgeSystem : EntitySystem
             }
         }
 
-        // Build restricted faction set
         _cachedRestrictedFactions = new HashSet<string>(proto.RestrictedFactions);
 
         // Keep full faction list — filtering for specific UIs is done at the caller level
@@ -371,7 +370,6 @@ public sealed class STFactionRelationsCartridgeSystem : EntitySystem
         var factions = defaults.Factions;
         var entries = new List<STFactionRelationEntry>();
 
-        // Build the full relation list using GetRelation() for proper alias resolution
         for (var i = 0; i < factions.Count; i++)
         {
             for (var j = i + 1; j < factions.Count; j++)
@@ -430,13 +428,11 @@ public sealed class STFactionRelationsCartridgeSystem : EntitySystem
 
     /// <summary>
     /// Resolves a band prototype name (e.g. "Dolg") to a faction relation name (e.g. "Duty").
+    /// Delegates to <see cref="SharedSTFactionResolutionSystem"/> for O(1) cached lookup.
     /// </summary>
     public string? GetBandFactionName(string bandName)
     {
-        if (!_protoManager.TryIndex(DefaultsProtoId, out var proto))
-            return null;
-
-        return proto.BandMapping.GetValueOrDefault(bandName);
+        return _factionResolution.GetBandFactionName(bandName);
     }
 
     /// <summary>
@@ -535,11 +531,9 @@ public sealed class STFactionRelationsCartridgeSystem : EntitySystem
         STFactionRelationType proposedRelation,
         string? customMessage)
     {
-        // Resolve aliases to primaries
         initiatingFaction = ResolvePrimary(initiatingFaction);
         targetFaction = ResolvePrimary(targetFaction);
 
-        // Validate factions
         var factionIds = GetFactionIds();
         if (factionIds == null || !factionIds.Contains(initiatingFaction) || !factionIds.Contains(targetFaction))
             return STFactionRelationChangeResult.InvalidFaction;
@@ -547,7 +541,6 @@ public sealed class STFactionRelationsCartridgeSystem : EntitySystem
         if (initiatingFaction == targetFaction)
             return STFactionRelationChangeResult.InvalidFaction;
 
-        // Reject player changes targeting restricted factions
         if (IsFactionRestricted(targetFaction))
             return STFactionRelationChangeResult.RestrictedFaction;
 
@@ -555,12 +548,10 @@ public sealed class STFactionRelationsCartridgeSystem : EntitySystem
         if (currentRelation == proposedRelation)
             return STFactionRelationChangeResult.SameRelation;
 
-        // Check cooldown
         var key = STFactionRelationHelpers.NormalizePair(initiatingFaction, targetFaction);
         if (_pairCooldowns.TryGetValue(key, out var expiry) && expiry > _timing.CurTime)
             return STFactionRelationChangeResult.OnCooldown;
 
-        // Look up fee and deduct from initiator
         var fee = GetFee(currentRelation, proposedRelation);
         if (fee > 0)
         {
@@ -572,19 +563,15 @@ public sealed class STFactionRelationsCartridgeSystem : EntitySystem
                 return STFactionRelationChangeResult.InsufficientFunds;
         }
 
-        // Trim custom message
         var maxLen = _config.GetCVar(STCCVars.FactionRelationsCustomMessageMaxLength);
         if (customMessage != null && customMessage.Length > maxLen)
             customMessage = customMessage[..maxLen];
 
-        // Set cooldown
         var cooldownSeconds = _config.GetCVar(STCCVars.FactionRelationsCooldownSeconds);
         _pairCooldowns[key] = _timing.CurTime + TimeSpan.FromSeconds(cooldownSeconds);
 
-        // Determine if this requires bilateral confirmation
         if (STFactionRelationHelpers.RequiresConfirmation(currentRelation, proposedRelation))
         {
-            // Create proposal
             var proposalKey = (initiatingFaction, targetFaction);
             var data = new STFactionRelationProposalData(
                 initiatingFaction,
@@ -619,7 +606,7 @@ public sealed class STFactionRelationsCartridgeSystem : EntitySystem
 
     /// <summary>
     /// Accepts a pending proposal targeting the accepting faction.
-    /// The acceptor pays nothing -- only the initiator paid when proposing.
+    /// The full fee paid by the initiator is deposited to the accepting faction's claimable funds.
     /// </summary>
     public STFactionRelationChangeResult AcceptProposal(
         EntityUid acceptorUid,
@@ -630,11 +617,16 @@ public sealed class STFactionRelationsCartridgeSystem : EntitySystem
         if (!_pendingProposals.TryGetValue(proposalKey, out var proposal))
             return STFactionRelationChangeResult.ProposalNotFound;
 
-        // Remove proposal
+        if (proposal.FeePaid > 0)
+        {
+            DepositClaimableFundsAsync(acceptingFaction, proposal.FeePaid,
+                $"Accepted proposal from {initiatingFaction}");
+            Log.Info($"Faction relations: deposited {proposal.FeePaid} RU to {acceptingFaction} for accepting proposal from {initiatingFaction}.");
+        }
+
         _pendingProposals.Remove(proposalKey);
         DeleteProposalAsync(initiatingFaction, acceptingFaction);
 
-        // Apply the relation change
         SetRelation(initiatingFaction, acceptingFaction, proposal.ProposedRelation,
             broadcast: true,
             customMessage: proposal.CustomMessage,
@@ -655,12 +647,10 @@ public sealed class STFactionRelationsCartridgeSystem : EntitySystem
         if (!_pendingProposals.TryGetValue(proposalKey, out var proposal))
             return STFactionRelationChangeResult.ProposalNotFound;
 
-        // Deposit partial refund for the initiator
         var refundRate = _config.GetCVar(STCCVars.FactionRelationsRefundOnRejection);
         DepositRefund(proposal.InitiatingFaction, proposal.FeePaid, refundRate,
             $"Proposal to {rejectingFaction} rejected");
 
-        // Remove proposal
         _pendingProposals.Remove(proposalKey);
         DeleteProposalAsync(initiatingFaction, rejectingFaction);
 
@@ -684,7 +674,7 @@ public sealed class STFactionRelationsCartridgeSystem : EntitySystem
         if (!_pendingProposals.TryGetValue(proposalKey, out var proposal))
             return;
 
-        // Deposit partial refund for the initiator (lower rate for voluntary cancellation)
+        // Lower refund rate for voluntary cancellation vs rejection/expiration
         var refundRate = _config.GetCVar(STCCVars.FactionRelationsRefundOnCancellation);
         DepositRefund(proposal.InitiatingFaction, proposal.FeePaid, refundRate,
             $"Proposal to {targetFaction} cancelled");
@@ -900,7 +890,6 @@ public sealed class STFactionRelationsCartridgeSystem : EntitySystem
             ("factionA", displayA),
             ("factionB", displayB));
 
-        // Append custom message if provided
         if (!string.IsNullOrWhiteSpace(customMessage))
         {
             var maxLen = _config.GetCVar(STCCVars.FactionRelationsCustomMessageMaxLength);

@@ -19,7 +19,6 @@ using Content.Server._Stalker_EN.Currency; // stalker-en-changes
 using Content.Server._Stalker_EN.FactionRelations; // stalker-en-changes
 using Content.Shared._Stalker_EN.FactionRelations; // stalker-en-changes
 using Content.Shared.Hands.EntitySystems;
-using Content.Shared.UserInterface; // stalker-en-changes
 using Robust.Shared.Player;
 
 namespace Content.Server._Stalker.Bands
@@ -50,7 +49,6 @@ namespace Content.Server._Stalker.Bands
         {
             base.Initialize();
 
-            SubscribeLocalEvent<BandsManagingComponent, ActivatableUIOpenAttemptEvent>(OnActivatableUIOpenAttempt); // stalker-en-changes
             SubscribeLocalEvent<BandsManagingComponent, BoundUIOpenedEvent>(HandleBoundUIOpen);
             SubscribeLocalEvent<BandsManagingComponent, ComponentStartup>(SubscribeUpdateUiState);
             SubscribeLocalEvent<BandsManagingComponent, BandsManagingAddMemberMessage>(OnAddMember);
@@ -75,44 +73,6 @@ namespace Content.Server._Stalker.Bands
             // UpdateUiState will attempt to find a session from the UI itself.
             UpdateUiState(ent);
         }
-
-        // stalker-en-changes start
-        /// <summary>
-        /// Prevents players from opening an Igor that belongs to a different faction.
-        /// </summary>
-        private void OnActivatableUIOpenAttempt(Entity<BandsManagingComponent> ent, ref ActivatableUIOpenAttemptEvent args)
-        {
-            // If this Igor has no faction set, allow anyone (generic Igor)
-            if (string.IsNullOrEmpty(ent.Comp.Faction))
-                return;
-
-            // Get player's band component
-            if (!TryComp<BandsComponent>(args.User, out var bandsComp) ||
-                string.IsNullOrEmpty(bandsComp.BandProto))
-            {
-                args.Cancel();
-                return;
-            }
-
-            // Resolve band name to faction name via prototype mapping
-            if (!_prototypeManager.TryIndex<STBandPrototype>(bandsComp.BandProto, out var bandProto))
-            {
-                args.Cancel();
-                return;
-            }
-
-            var playerFaction = _factionRelations.GetBandFactionName(bandProto.Name);
-
-            // Resolve aliases (e.g. "Rookies" -> "Loners")
-            if (!string.IsNullOrEmpty(playerFaction))
-                playerFaction = _factionRelations.ResolvePrimary(playerFaction);
-
-            var igorFaction = _factionRelations.ResolvePrimary(ent.Comp.Faction);
-
-            if (playerFaction != igorFaction)
-                args.Cancel();
-        }
-        // stalker-en-changes end
 
         private void HandleBoundUIOpen(Entity<BandsManagingComponent> ent, ref BoundUIOpenedEvent args)
         {
@@ -227,19 +187,17 @@ namespace Content.Server._Stalker.Bands
             // --- Create and Send State ---
             var shopItems = _loadedShopItems.GetValueOrDefault(uid, new List<BandShopItem>());
 
-            // stalker-en-changes start - Gather Faction Relations Data
+            // stalker-en-changes start
             string? playerFaction = component.Faction;
             if (string.IsNullOrEmpty(playerFaction) && bandInfo != null)
                 playerFaction = _factionRelations.GetBandFactionName(bandInfo.Prototype.Name);
 
-            // Resolve aliases to primary (e.g. "Rookies" -> "Loners")
             if (!string.IsNullOrEmpty(playerFaction))
                 playerFaction = _factionRelations.ResolvePrimary(playerFaction);
 
             var relationsState = _factionRelations.BuildUiState();
             var hideRelationsTab = !string.IsNullOrEmpty(playerFaction) && _factionRelations.IsFactionRestricted(playerFaction);
 
-            // Filter aliases and restricted factions from Igor's dropdown
             var allFactions = new List<string>();
             foreach (var f in relationsState.FactionIds)
             {
@@ -247,7 +205,6 @@ namespace Content.Server._Stalker.Bands
                     allFactions.Add(f);
             }
 
-            // Gather proposals, fees, balance, and cooldowns
             var incomingProposals = new List<STFactionRelationProposalEntry>();
             var outgoingProposals = new List<STFactionRelationProposalEntry>();
             var fees = _factionRelations.GetFeeEntries();
@@ -280,7 +237,6 @@ namespace Content.Server._Stalker.Bands
                 }
             }
 
-            // Load claimable refund funds for this faction
             var claimableFundsTotal = 0;
             if (!string.IsNullOrEmpty(playerFaction) && canManage)
                 claimableFundsTotal = await _dbManager.GetStalkerFactionClaimableFundsTotalAsync(playerFaction);
@@ -635,7 +591,6 @@ namespace Content.Server._Stalker.Bands
                     relationType,
                     msg.CustomMessage);
 
-                // Refresh Igor UI for the actor
                 UpdateUiState((uid, component), msg.Actor);
             }
             catch (Exception e)
@@ -706,7 +661,6 @@ namespace Content.Server._Stalker.Bands
                 if (total <= 0)
                     return;
 
-                // Spawn roubles on the claiming player and clear the DB entries
                 _currency.AddRoubles(msg.Actor, total);
                 await _dbManager.DeleteAllStalkerFactionClaimableFundsByFactionAsync(playerFaction);
 

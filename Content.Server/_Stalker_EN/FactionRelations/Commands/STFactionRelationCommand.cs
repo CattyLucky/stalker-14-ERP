@@ -68,7 +68,6 @@ public sealed class STFactionRelationCommand : IConsoleCommand
         var factionB = args[2];
         var relationStr = args[3].ToLowerInvariant();
 
-        // Check for --broadcast flag in remaining args
         var broadcast = false;
         for (var i = 4; i < args.Length; i++)
         {

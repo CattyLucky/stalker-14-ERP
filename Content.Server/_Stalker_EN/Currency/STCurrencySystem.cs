@@ -48,14 +48,12 @@ public sealed class STCurrencySystem : EntitySystem
         if (stacks.Count == 0)
             return false;
 
-        // Merge all stacks into the first one
         var target = stacks[0];
         for (var i = 1; i < stacks.Count; i++)
         {
             _stack.TryMergeStacks(stacks[i].Entity, target.Entity, out _);
         }
 
-        // Check if we have enough after merging
         if (target.Stack.Count < amount)
             return false;
 
@@ -80,7 +78,6 @@ public sealed class STCurrencySystem : EntitySystem
         var maxCount = _stack.GetMaxCount(new ProtoId<StackPrototype>(moneyId));
         var remaining = amount;
 
-        // First, fill existing stacks in inventory
         var stacks = new List<(EntityUid Entity, StackComponent Stack)>();
         CollectRoubleStacks(uid, moneyId, stacks);
 
@@ -98,7 +95,6 @@ public sealed class STCurrencySystem : EntitySystem
                 return;
         }
 
-        // Spawn new stacks for the remainder
         while (remaining > 0)
         {
             var toSpawn = Math.Min(maxCount, remaining);

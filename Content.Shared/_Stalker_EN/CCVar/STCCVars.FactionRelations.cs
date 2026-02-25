@@ -2,8 +2,6 @@ using Robust.Shared.Configuration;
 
 namespace Content.Shared._Stalker_EN.CCVar;
 
-// CVars for faction relations notifications
-
 public sealed partial class STCCVars
 {
     /// <summary>
