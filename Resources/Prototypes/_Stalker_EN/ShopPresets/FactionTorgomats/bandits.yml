@@ -293,7 +293,17 @@
         ClothingOuterCoatPahan: 140 # T1
         ClothingOuterCoatKolchyga: 550 # T1
         ClothingOuterCoatBanditRedline: 3000 # T2 pvp
-        ClothingOuterCoatLoyalist: 2500 # T2
+        ClothingCloakStalker: 30
+        ClothingCloakBeige: 1000
+        ClothingCloakBlack: 1000
+        ClothingCloakBrown: 1000
+        ClothingCloakGreen: 1000
+        ClothingCloakNavy: 1000
+        ClothingCloakShortCoverBlack: 1000
+        ClothingOuterCoatDoshdevik: 100 # T1
+        ClothingOuterCoatStalker: 1000
+        ClothingOuterCoatLoyalistLight: 2500
+        ClothingOuterCoatLoyalist: 3000
           # Gasmasks
         ClothingMaskXoma: 100 # T1
         ClothingMaskGP5: 200 # T2

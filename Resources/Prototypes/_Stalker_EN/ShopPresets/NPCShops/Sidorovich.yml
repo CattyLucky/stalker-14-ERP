@@ -301,7 +301,17 @@
       priority: 8
       items:
           # Cloaks
-        ClothingOuterCoatDoshdevik: 1000 # T1
+        ClothingCloakStalker: 30
+        ClothingCloakBeige: 1000
+        ClothingCloakBlack: 1000
+        ClothingCloakBrown: 1000
+        ClothingCloakGreen: 1000
+        ClothingCloakNavy: 1000
+        ClothingCloakShortCoverBlack: 1000
+        ClothingOuterCoatDoshdevik: 100 # T1
+        ClothingOuterCoatStalker: 1000
+        ClothingOuterCoatLoyalistLight: 2500
+        ClothingOuterCoatLoyalist: 3000
           # Gasmasks
         ClothingMaskGasZarya: 90 # T1
         ClothingMaskGP5: 350 # T2
@@ -397,7 +407,6 @@
         ClothingHandsGlovesMercFingerless: 60
         # OUTERCLOTHING
         # CLOAK
-        ClothingCloakStalker: 30
         # LEGS
         ClothingLegsJeansBlue: 10
         ClothingLegsJeansStalker: 10

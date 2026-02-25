@@ -259,6 +259,8 @@
       STClothingOuterArmorLightPlateVestBaseANABlue: 9500 # T3 - PVP
       ClothingOuterArmorCN3a: 12000 # T3 - PVE
       ClothingOuterArmorSevaCN: 3600 # T3 - ENVl
+      STClothingOuterArmorCN-4a: 3600 # Illusion of choice
+      STClothingOuterArmorCN-4aResearcher: 4000 # Slightly better SEVA
       ClothingOuterArmorSevaClearSky: 15000 # T3 - ENV/PVP
 
   - name: shop-category-storage-and-containers
@@ -283,6 +285,17 @@
       ClothingOuterCoatDoshdevik: 60 # T1
       ClothingOuterCoatStalker: 350 # T2
       ClothingOuterCoatKevlarClearSky: 2750 # T2
+      ClothingCloakStalker: 30
+      ClothingCloakBeige: 1000
+      ClothingCloakBlack: 1000
+      ClothingCloakBrown: 1000
+      ClothingCloakGreen: 1000
+      ClothingCloakNavy: 1000
+      ClothingCloakShortCoverBlack: 1000
+      ClothingOuterCoatLoyalistLight: 2500
+      ClothingOuterCoatLoyalist: 3000
+      ClothingOuterCoatAugust: 2500
+      ClothingOuterCoatAugustM: 3000
       # Gasmasks
       ClothingMaskGasChN: 100 # T1
       ClothingMaskGasM40: 400 # T2

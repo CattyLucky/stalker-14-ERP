@@ -337,9 +337,18 @@
         ClothingMaskGasZarya: 125
         ClothingMaskGasZaryaMono: 150
         ClothingMaskXoma: 95
-        ClothingCloakStalker: 100
+        ClothingCloakStalker: 30
+        ClothingCloakBeige: 1000
+        ClothingCloakBlack: 1000
+        ClothingCloakBrown: 1000
+        ClothingCloakGreen: 1000
+        ClothingCloakNavy: 1000
+        ClothingCloakShortCoverBlack: 1000
+        ClothingOuterCoatDoshdevik: 100 # T1
+        ClothingOuterCoatStalker: 1000
+        ClothingOuterCoatLoyalistLight: 2500
+        ClothingOuterCoatLoyalist: 3000
         STClothingCapeArmorChainmailSeva: 2000
-        #ClothingOuterCoatLoyalist: 3400 Might add back or just locked to crafting
 
     - name: shop-category-research-equipment
       priority: 10
@@ -433,7 +442,6 @@
         ClothingHeadHatBlacksoft: 10
         ClothingHeadHatGreysoft: 10
         ClothingHeadHatSovietUshankaStalker: 40
-        ClothingCloakStalker: 30
         ClothingLegsJeansBlue: 10
         ClothingLegsJeansStalker: 10
         ClothingLegsJeansGreenCargo: 10
