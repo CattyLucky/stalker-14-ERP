@@ -2105,6 +2105,98 @@ INSERT INTO player_round (players_id, rounds_id) VALUES ({players[player]}, {id}
             await db.DbContext.StalkerFactionRelations.ExecuteDeleteAsync();
         }
 
+        // stalker-en-changes: Faction relation proposals
+        public async Task<List<StalkerFactionRelationProposal>> GetAllStalkerFactionRelationProposalsAsync()
+        {
+            await using var db = await GetDb();
+            return await db.DbContext.StalkerFactionRelationProposals.ToListAsync();
+        }
+
+        public async Task SetStalkerFactionRelationProposalAsync(
+            string initiatingFaction,
+            string targetFaction,
+            int proposedRelationType,
+            string? customMessage,
+            int feePaid)
+        {
+            await using var db = await GetDb();
+
+            var existing = await db.DbContext.StalkerFactionRelationProposals
+                .FirstOrDefaultAsync(p => p.InitiatingFaction == initiatingFaction && p.TargetFaction == targetFaction);
+
+            if (existing is null)
+            {
+                db.DbContext.StalkerFactionRelationProposals.Add(new StalkerFactionRelationProposal
+                {
+                    InitiatingFaction = initiatingFaction,
+                    TargetFaction = targetFaction,
+                    ProposedRelationType = proposedRelationType,
+                    CustomMessage = customMessage,
+                    CreatedAt = DateTime.UtcNow,
+                    FeePaid = feePaid,
+                });
+            }
+            else
+            {
+                existing.ProposedRelationType = proposedRelationType;
+                existing.CustomMessage = customMessage;
+                existing.CreatedAt = DateTime.UtcNow;
+                existing.FeePaid = feePaid;
+            }
+
+            await db.DbContext.SaveChangesAsync();
+        }
+
+        public async Task DeleteStalkerFactionRelationProposalAsync(string initiatingFaction, string targetFaction)
+        {
+            await using var db = await GetDb();
+
+            var record = await db.DbContext.StalkerFactionRelationProposals
+                .FirstOrDefaultAsync(p => p.InitiatingFaction == initiatingFaction && p.TargetFaction == targetFaction);
+
+            if (record != null)
+            {
+                db.DbContext.StalkerFactionRelationProposals.Remove(record);
+                await db.DbContext.SaveChangesAsync();
+            }
+        }
+
+        public async Task ClearAllStalkerFactionRelationProposalsAsync()
+        {
+            await using var db = await GetDb();
+            await db.DbContext.StalkerFactionRelationProposals.ExecuteDeleteAsync();
+        }
+
+        // stalker-en-changes: Claimable funds for faction relation refunds
+        public async Task AddStalkerFactionClaimableFundsAsync(string faction, int amount, string reason)
+        {
+            await using var db = await GetDb();
+            db.DbContext.StalkerFactionClaimableFunds.Add(new StalkerFactionClaimableFunds
+            {
+                Faction = faction,
+                Amount = amount,
+                Reason = reason,
+                CreatedAt = DateTime.UtcNow,
+            });
+            await db.DbContext.SaveChangesAsync();
+        }
+
+        public async Task<int> GetStalkerFactionClaimableFundsTotalAsync(string faction)
+        {
+            await using var db = await GetDb();
+            return await db.DbContext.StalkerFactionClaimableFunds
+                .Where(f => f.Faction == faction)
+                .SumAsync(f => f.Amount);
+        }
+
+        public async Task DeleteAllStalkerFactionClaimableFundsByFactionAsync(string faction)
+        {
+            await using var db = await GetDb();
+            await db.DbContext.StalkerFactionClaimableFunds
+                .Where(f => f.Faction == faction)
+                .ExecuteDeleteAsync();
+        }
+
         #endregion
         #region Job Whitelists
 
