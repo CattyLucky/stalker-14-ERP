@@ -22,10 +22,9 @@ public sealed partial class BandsManagingWindow : FancyWindow
     public event Action<Guid>? OnRemoveMemberButtonPressed;
     public event Action<string>? OnBuyItemButtonPressed;
     // stalker-en-changes start
-    public event Action<string, int, string?>? OnProposeRelationPressed;
+    public event Action<string, int, string?, bool>? OnProposeRelationPressed;
     public event Action<string, bool>? OnRespondProposalPressed;
     public event Action<string>? OnCancelProposalPressed;
-    public event Action? OnClaimFundsPressed;
     // stalker-en-changes end
 
     [Dependency] private readonly IPrototypeManager _prototypeManager = default!;
@@ -300,50 +299,11 @@ public sealed partial class BandsManagingWindow : FancyWindow
 
         _spriteSystem ??= _entityManager.System<SpriteSystem>();
 
-        // Build fee lookup from the list
-        var feeLookup = new Dictionary<(STFactionRelationType, STFactionRelationType), int>();
-        foreach (var fee in state.Fees)
-        {
-            feeLookup[(fee.From, fee.To)] = fee.Cost;
-        }
-
         // Build relation lookup
         var relationLookup = new Dictionary<(string, string), STFactionRelationType>();
         foreach (var entry in state.FactionRelations)
         {
             relationLookup[(entry.FactionA, entry.FactionB)] = entry.Relation;
-        }
-
-        // --- Balance display ---
-        RelationsList.AddChild(new Label
-        {
-            Text = Loc.GetString("bands-managing-window-balance", ("amount", state.PlayerRoubles)),
-            StyleClasses = { "LabelSecondaryColor" },
-            Margin = new Thickness(0, 0, 0, 4),
-        });
-
-        // --- Claimable funds section ---
-        if (state.CanManage && state.ClaimableFundsTotal > 0)
-        {
-            var claimRow = new BoxContainer
-            {
-                Orientation = BoxContainer.LayoutOrientation.Horizontal,
-                HorizontalExpand = true,
-                Margin = new Thickness(0, 0, 0, 8),
-                SeparationOverride = 8,
-            };
-            claimRow.AddChild(new Label
-            {
-                Text = Loc.GetString("bands-managing-window-claimable-funds", ("amount", state.ClaimableFundsTotal)),
-                VerticalAlignment = VAlignment.Center,
-            });
-            var claimBtn = new Button
-            {
-                Text = Loc.GetString("bands-managing-window-claim-button"),
-            };
-            claimBtn.OnPressed += _ => OnClaimFundsPressed?.Invoke();
-            claimRow.AddChild(claimBtn);
-            RelationsList.AddChild(claimRow);
         }
 
         // --- Custom message input ---
@@ -555,26 +515,22 @@ public sealed partial class BandsManagingWindow : FancyWindow
                 Visible = false,
             };
 
-            var feeLabel = new Label
-            {
-                StyleClasses = { "LabelSecondaryColor" },
-                VerticalAlignment = VAlignment.Center,
-            };
-            detailRow.AddChild(feeLabel);
-
-            detailRow.AddChild(new Label
-            {
-                Text = "·",
-                StyleClasses = { "LabelSecondaryColor" },
-                VerticalAlignment = VAlignment.Center,
-            });
-
             var typeLabel = new Label
             {
                 StyleClasses = { "LabelSecondaryColor" },
                 VerticalAlignment = VAlignment.Center,
             };
             detailRow.AddChild(typeLabel);
+
+            // Broadcast toggle checkbox (only relevant for bilateral proposals)
+            var broadcastCheckBox = new CheckBox
+            {
+                Text = Loc.GetString("bands-managing-window-relation-broadcast"),
+                Pressed = true,
+                VerticalAlignment = VAlignment.Center,
+                Visible = false,
+            };
+            detailRow.AddChild(broadcastCheckBox);
 
             // --- Confirm button (hidden by default) ---
             var confirmButton = new ConfirmButton
@@ -595,7 +551,8 @@ public sealed partial class BandsManagingWindow : FancyWindow
                     ? null
                     : _customMessageLineEdit.Text;
 
-                OnProposeRelationPressed?.Invoke(targetFaction, (int) selected, msg);
+                var broadcast = broadcastCheckBox.Pressed;
+                OnProposeRelationPressed?.Invoke(targetFaction, (int) selected, msg, broadcast);
                 _pendingSelections.Remove(targetFaction);
             };
 
@@ -613,8 +570,8 @@ public sealed partial class BandsManagingWindow : FancyWindow
                 else
                 {
                     _pendingSelections[targetFaction] = selectedRelation;
-                    UpdateDetailRow(feeLabel, typeLabel, confirmButton,
-                        currentRelation, selectedRelation, feeLookup, state.PlayerRoubles);
+                    UpdateDetailRow(typeLabel, broadcastCheckBox, confirmButton,
+                        currentRelation, selectedRelation);
                     detailRow.Visible = true;
                 }
             };
@@ -647,8 +604,8 @@ public sealed partial class BandsManagingWindow : FancyWindow
             if (_pendingSelections.TryGetValue(faction, out var pendingSelection) && pendingSelection != currentRelation)
             {
                 dropdown.SelectId((int) pendingSelection);
-                UpdateDetailRow(feeLabel, typeLabel, confirmButton,
-                    currentRelation, pendingSelection, feeLookup, state.PlayerRoubles);
+                UpdateDetailRow(typeLabel, broadcastCheckBox, confirmButton,
+                    currentRelation, pendingSelection);
                 detailRow.Visible = true;
             }
             else
@@ -661,24 +618,14 @@ public sealed partial class BandsManagingWindow : FancyWindow
     }
 
     private void UpdateDetailRow(
-        Label feeLabel,
         Label typeLabel,
+        CheckBox broadcastCheckBox,
         ConfirmButton confirmButton,
         STFactionRelationType current,
-        STFactionRelationType selected,
-        Dictionary<(STFactionRelationType, STFactionRelationType), int> feeLookup,
-        int playerRoubles)
+        STFactionRelationType selected)
     {
-        var cost = feeLookup.GetValueOrDefault((current, selected), 0);
-        var canAfford = playerRoubles >= cost || cost == 0;
         var requiresConfirmation = STFactionRelationHelpers.RequiresConfirmation(current, selected);
         var isEscalation = STFactionRelationHelpers.IsEscalation(current, selected);
-
-        // Fee display
-        feeLabel.Text = cost > 0
-            ? Loc.GetString("bands-managing-window-relation-fee", ("cost", cost))
-            : Loc.GetString("bands-managing-window-relation-free");
-        feeLabel.FontColorOverride = null;
 
         // Change type indicator
         typeLabel.Text = requiresConfirmation
@@ -687,23 +634,15 @@ public sealed partial class BandsManagingWindow : FancyWindow
 
         typeLabel.FontColorOverride = GetRelationColor(selected);
 
-        // Confirm button: visible only when player can afford
-        if (canAfford)
-        {
-            confirmButton.Text = isEscalation
-                ? Loc.GetString("bands-managing-window-relation-declare-button")
-                : Loc.GetString("bands-managing-window-relation-propose-button");
+        // Show broadcast toggle only for bilateral proposals
+        broadcastCheckBox.Visible = requiresConfirmation;
 
-            confirmButton.ConfirmationText = cost > 0
-                ? Loc.GetString("bands-managing-window-relation-confirm-pay", ("cost", cost))
-                : Loc.GetString("bands-managing-window-relation-confirm-free");
+        confirmButton.Text = isEscalation
+            ? Loc.GetString("bands-managing-window-relation-declare-button")
+            : Loc.GetString("bands-managing-window-relation-propose-button");
 
-            confirmButton.Visible = true;
-        }
-        else
-        {
-            confirmButton.Visible = false;
-        }
+        confirmButton.ConfirmationText = Loc.GetString("bands-managing-window-relation-confirm-free");
+        confirmButton.Visible = true;
     }
 
     private static Color? GetRelationColor(STFactionRelationType type)

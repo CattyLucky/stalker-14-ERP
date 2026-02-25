@@ -29,7 +29,6 @@ namespace Content.Client._Stalker.Bands.UI
                 _window.OnProposeRelationPressed += ProposeRelation;
                 _window.OnRespondProposalPressed += RespondProposal;
                 _window.OnCancelProposalPressed += CancelProposal;
-                _window.OnClaimFundsPressed += ClaimFunds;
                 // stalker-en-changes end
             }
         }
@@ -51,9 +50,9 @@ namespace Content.Client._Stalker.Bands.UI
         }
 
         // stalker-en-changes start
-        private void ProposeRelation(string targetFaction, int relation, string? customMessage)
+        private void ProposeRelation(string targetFaction, int relation, string? customMessage, bool broadcast)
         {
-            SendMessage(new BandsManagingProposeRelationMessage(targetFaction, relation, customMessage));
+            SendMessage(new BandsManagingProposeRelationMessage(targetFaction, relation, customMessage, broadcast));
         }
 
         private void RespondProposal(string initiatingFaction, bool accept)
@@ -64,11 +63,6 @@ namespace Content.Client._Stalker.Bands.UI
         private void CancelProposal(string targetFaction)
         {
             SendMessage(new BandsManagingCancelProposalMessage(targetFaction));
-        }
-
-        private void ClaimFunds()
-        {
-            SendMessage(new BandsManagingClaimFundsMessage());
         }
         // stalker-en-changes end
 
@@ -91,7 +85,6 @@ namespace Content.Client._Stalker.Bands.UI
                 _window.OnProposeRelationPressed -= ProposeRelation;
                 _window.OnRespondProposalPressed -= RespondProposal;
                 _window.OnCancelProposalPressed -= CancelProposal;
-                _window.OnClaimFundsPressed -= ClaimFunds;
                 // stalker-en-changes end
                 _window.Dispose();
             }

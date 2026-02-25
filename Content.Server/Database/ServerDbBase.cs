@@ -2117,7 +2117,7 @@ INSERT INTO player_round (players_id, rounds_id) VALUES ({players[player]}, {id}
             string targetFaction,
             int proposedRelationType,
             string? customMessage,
-            int feePaid)
+            bool broadcast)
         {
             await using var db = await GetDb();
 
@@ -2133,7 +2133,7 @@ INSERT INTO player_round (players_id, rounds_id) VALUES ({players[player]}, {id}
                     ProposedRelationType = proposedRelationType,
                     CustomMessage = customMessage,
                     CreatedAt = DateTime.UtcNow,
-                    FeePaid = feePaid,
+                    Broadcast = broadcast,
                 });
             }
             else
@@ -2141,7 +2141,7 @@ INSERT INTO player_round (players_id, rounds_id) VALUES ({players[player]}, {id}
                 existing.ProposedRelationType = proposedRelationType;
                 existing.CustomMessage = customMessage;
                 existing.CreatedAt = DateTime.UtcNow;
-                existing.FeePaid = feePaid;
+                existing.Broadcast = broadcast;
             }
 
             await db.DbContext.SaveChangesAsync();
@@ -2165,36 +2165,6 @@ INSERT INTO player_round (players_id, rounds_id) VALUES ({players[player]}, {id}
         {
             await using var db = await GetDb();
             await db.DbContext.StalkerFactionRelationProposals.ExecuteDeleteAsync();
-        }
-
-        // stalker-en-changes: Claimable funds for faction relation refunds
-        public async Task AddStalkerFactionClaimableFundsAsync(string faction, int amount, string reason)
-        {
-            await using var db = await GetDb();
-            db.DbContext.StalkerFactionClaimableFunds.Add(new StalkerFactionClaimableFunds
-            {
-                Faction = faction,
-                Amount = amount,
-                Reason = reason,
-                CreatedAt = DateTime.UtcNow,
-            });
-            await db.DbContext.SaveChangesAsync();
-        }
-
-        public async Task<int> GetStalkerFactionClaimableFundsTotalAsync(string faction)
-        {
-            await using var db = await GetDb();
-            return await db.DbContext.StalkerFactionClaimableFunds
-                .Where(f => f.Faction == faction)
-                .SumAsync(f => f.Amount);
-        }
-
-        public async Task DeleteAllStalkerFactionClaimableFundsByFactionAsync(string faction)
-        {
-            await using var db = await GetDb();
-            await db.DbContext.StalkerFactionClaimableFunds
-                .Where(f => f.Faction == faction)
-                .ExecuteDeleteAsync();
         }
 
         #endregion

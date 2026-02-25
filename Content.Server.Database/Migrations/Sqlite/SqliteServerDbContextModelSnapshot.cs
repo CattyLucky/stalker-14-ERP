@@ -1351,37 +1351,6 @@ namespace Content.Server.Database.Migrations.Sqlite
                     b.ToTable("stalker_factions", (string)null);
                 });
 
-            modelBuilder.Entity("Content.Server.Database.StalkerFactionClaimableFunds", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
-                        .HasColumnName("stalker_faction_claimable_funds_id");
-
-                    b.Property<int>("Amount")
-                        .HasColumnType("INTEGER")
-                        .HasColumnName("amount");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT")
-                        .HasColumnName("created_at");
-
-                    b.Property<string>("Faction")
-                        .IsRequired()
-                        .HasColumnType("TEXT")
-                        .HasColumnName("faction");
-
-                    b.Property<string>("Reason")
-                        .IsRequired()
-                        .HasColumnType("TEXT")
-                        .HasColumnName("reason");
-
-                    b.HasKey("Id")
-                        .HasName("PK_stalker_faction_claimable_funds");
-
-                    b.ToTable("stalker_faction_claimable_funds", (string)null);
-                });
-
             modelBuilder.Entity("Content.Server.Database.StalkerFactionRelation", b =>
                 {
                     b.Property<string>("FactionA")
@@ -1412,6 +1381,10 @@ namespace Content.Server.Database.Migrations.Sqlite
                         .HasColumnType("TEXT")
                         .HasColumnName("target_faction");
 
+                    b.Property<bool>("Broadcast")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("broadcast");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT")
                         .HasColumnName("created_at");
@@ -1419,10 +1392,6 @@ namespace Content.Server.Database.Migrations.Sqlite
                     b.Property<string>("CustomMessage")
                         .HasColumnType("TEXT")
                         .HasColumnName("custom_message");
-
-                    b.Property<int>("FeePaid")
-                        .HasColumnType("INTEGER")
-                        .HasColumnName("fee_paid");
 
                     b.Property<int>("ProposedRelationType")
                         .HasColumnType("INTEGER")

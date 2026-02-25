@@ -15,7 +15,6 @@ using Content.Shared.StatusIcon.Components;
 using Content.Server.Players.JobWhitelist;
 using Content.Shared._Stalker.Bands.Components;
 using Content.Server._Stalker.WarZone;
-using Content.Server._Stalker_EN.Currency; // stalker-en-changes
 using Content.Server._Stalker_EN.FactionRelations; // stalker-en-changes
 using Content.Shared._Stalker_EN.FactionRelations; // stalker-en-changes
 using Content.Shared.Hands.EntitySystems;
@@ -38,7 +37,6 @@ namespace Content.Server._Stalker.Bands
         [Dependency] private readonly IEntityManager _entityManager = default!;
         [Dependency] private readonly ISharedPlayerManager _player = default!;
         [Dependency] private readonly STFactionRelationsCartridgeSystem _factionRelations = default!; // stalker-en-changes
-        [Dependency] private readonly STCurrencySystem _currency = default!; // stalker-en-changes
 
         private sealed record ServerBandInfo(STBandPrototype Prototype, StalkerBand? DbBand = null);
 
@@ -61,7 +59,6 @@ namespace Content.Server._Stalker.Bands
             SubscribeLocalEvent<BandsManagingComponent, BandsManagingProposeRelationMessage>(OnProposeRelation);
             SubscribeLocalEvent<BandsManagingComponent, BandsManagingRespondProposalMessage>(OnRespondProposal);
             SubscribeLocalEvent<BandsManagingComponent, BandsManagingCancelProposalMessage>(OnCancelProposal);
-            SubscribeLocalEvent<BandsManagingComponent, BandsManagingClaimFundsMessage>(OnClaimFunds);
             // stalker-en-changes end
 
             SubscribeLocalEvent<BandsComponent, ChangeBandEvent>(OnChange);
@@ -207,8 +204,6 @@ namespace Content.Server._Stalker.Bands
 
             var incomingProposals = new List<STFactionRelationProposalEntry>();
             var outgoingProposals = new List<STFactionRelationProposalEntry>();
-            var fees = _factionRelations.GetFeeEntries();
-            var playerRoubles = actor.HasValue ? _currency.CountRoubles(actor.Value) : 0;
             var cooldownsRemaining = new Dictionary<string, float>();
 
             if (!string.IsNullOrEmpty(playerFaction))
@@ -237,9 +232,6 @@ namespace Content.Server._Stalker.Bands
                 }
             }
 
-            var claimableFundsTotal = 0;
-            if (!string.IsNullOrEmpty(playerFaction) && canManage)
-                claimableFundsTotal = await _dbManager.GetStalkerFactionClaimableFundsTotalAsync(playerFaction);
             // stalker-en-changes end
 
             var factionDisplayNames = _factionRelations.GetDisplayNames(); // stalker-en-changes
@@ -248,8 +240,8 @@ namespace Content.Server._Stalker.Bands
                 bandName, maxMembers, members, canManage,
                 warZoneInfos, bandPointsInfos, shopItems,
                 playerFaction, allFactions, relationsState.Relations,
-                incomingProposals, outgoingProposals, fees, playerRoubles, cooldownsRemaining,
-                hideRelationsTab, claimableFundsTotal, factionDisplayNames);
+                incomingProposals, outgoingProposals, cooldownsRemaining,
+                hideRelationsTab, factionDisplayNames);
 
             _uiSystem.SetUiState(uid, BandsUiKey.Key, state);
         }
@@ -589,7 +581,8 @@ namespace Content.Server._Stalker.Bands
                     playerFaction,
                     msg.TargetFaction,
                     relationType,
-                    msg.CustomMessage);
+                    msg.CustomMessage,
+                    msg.Broadcast);
 
                 UpdateUiState((uid, component), msg.Actor);
             }
@@ -643,34 +636,6 @@ namespace Content.Server._Stalker.Bands
             }
         }
 
-        private async void OnClaimFunds(EntityUid uid, BandsManagingComponent component, BandsManagingClaimFundsMessage msg)
-        {
-            try
-            {
-                if (!TryGetSession(msg.Actor, out var session))
-                    return;
-
-                if (!await CanPlayerManageBandAsync(session.UserId))
-                    return;
-
-                var playerFaction = await ResolvePlayerFactionAsync(component, session.UserId);
-                if (playerFaction == null)
-                    return;
-
-                var total = await _dbManager.GetStalkerFactionClaimableFundsTotalAsync(playerFaction);
-                if (total <= 0)
-                    return;
-
-                _currency.AddRoubles(msg.Actor, total);
-                await _dbManager.DeleteAllStalkerFactionClaimableFundsByFactionAsync(playerFaction);
-
-                UpdateUiState((uid, component), msg.Actor);
-            }
-            catch (Exception e)
-            {
-                Logger.ErrorS("bands", $"Error in OnClaimFunds: {e}");
-            }
-        }
         // stalker-en-changes end
 
         private async void OnBuyItem(EntityUid uid, BandsManagingComponent component, BandsManagingBuyItemMessage msg)

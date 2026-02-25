@@ -19,7 +19,8 @@ namespace Content.Server.Database.Migrations.Postgres
                     target_faction = table.Column<string>(type: "text", nullable: false),
                     proposed_relation_type = table.Column<int>(type: "integer", nullable: false),
                     custom_message = table.Column<string>(type: "text", nullable: true),
-                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    broadcast = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false)
                 },
                 constraints: table =>
                 {

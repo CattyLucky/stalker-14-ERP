@@ -19,7 +19,8 @@ namespace Content.Server.Database.Migrations.Sqlite
                     target_faction = table.Column<string>(type: "TEXT", nullable: false),
                     proposed_relation_type = table.Column<int>(type: "INTEGER", nullable: false),
                     custom_message = table.Column<string>(type: "TEXT", nullable: true),
-                    created_at = table.Column<DateTime>(type: "TEXT", nullable: false)
+                    created_at = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    broadcast = table.Column<bool>(type: "INTEGER", nullable: false, defaultValue: false)
                 },
                 constraints: table =>
                 {

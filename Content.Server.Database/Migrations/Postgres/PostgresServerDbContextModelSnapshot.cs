@@ -1430,39 +1430,6 @@ namespace Content.Server.Database.Migrations.Postgres
                     b.ToTable("stalker_factions", (string)null);
                 });
 
-            modelBuilder.Entity("Content.Server.Database.StalkerFactionClaimableFunds", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("stalker_faction_claimable_funds_id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("Amount")
-                        .HasColumnType("integer")
-                        .HasColumnName("amount");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<string>("Faction")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("faction");
-
-                    b.Property<string>("Reason")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("reason");
-
-                    b.HasKey("Id")
-                        .HasName("PK_stalker_faction_claimable_funds");
-
-                    b.ToTable("stalker_faction_claimable_funds", (string)null);
-                });
-
             modelBuilder.Entity("Content.Server.Database.StalkerFactionRelation", b =>
                 {
                     b.Property<string>("FactionA")
@@ -1493,6 +1460,10 @@ namespace Content.Server.Database.Migrations.Postgres
                         .HasColumnType("text")
                         .HasColumnName("target_faction");
 
+                    b.Property<bool>("Broadcast")
+                        .HasColumnType("boolean")
+                        .HasColumnName("broadcast");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
@@ -1500,10 +1471,6 @@ namespace Content.Server.Database.Migrations.Postgres
                     b.Property<string>("CustomMessage")
                         .HasColumnType("text")
                         .HasColumnName("custom_message");
-
-                    b.Property<int>("FeePaid")
-                        .HasColumnType("integer")
-                        .HasColumnName("fee_paid");
 
                     b.Property<int>("ProposedRelationType")
                         .HasColumnType("integer")

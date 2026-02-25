@@ -1384,6 +1384,10 @@ namespace Content.Server.Database.Migrations.Sqlite
                         .HasColumnType("TEXT")
                         .HasColumnName("target_faction");
 
+                    b.Property<bool>("Broadcast")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("broadcast");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT")
                         .HasColumnName("created_at");

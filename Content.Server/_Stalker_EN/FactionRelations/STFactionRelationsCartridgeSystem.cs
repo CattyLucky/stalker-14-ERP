@@ -1,4 +1,3 @@
-using Content.Server._Stalker_EN.Currency;
 using Content.Server.CartridgeLoader;
 using Content.Server.Chat.Systems;
 using Content.Server.Database;
@@ -18,13 +17,12 @@ namespace Content.Server._Stalker_EN.FactionRelations;
 
 /// <summary>
 /// Server system for the faction relations PDA cartridge program.
-/// Manages relation overrides, bilateral proposals, fees, cooldowns, and announcements.
+/// Manages relation overrides, bilateral proposals, cooldowns, and announcements.
 /// </summary>
 public sealed class STFactionRelationsCartridgeSystem : EntitySystem
 {
     [Dependency] private readonly CartridgeLoaderSystem _cartridgeLoaderSystem = default!;
     [Dependency] private readonly ChatSystem _chatSystem = default!;
-    [Dependency] private readonly STCurrencySystem _currency = default!;
     [Dependency] private readonly DiscordWebhook _discord = default!;
     [Dependency] private readonly IConfigurationManager _config = default!;
     [Dependency] private readonly GameTicker _gameTicker = default!;
@@ -67,11 +65,6 @@ public sealed class STFactionRelationsCartridgeSystem : EntitySystem
     /// Not persisted across restarts.
     /// </summary>
     private readonly Dictionary<(string, string), TimeSpan> _pairCooldowns = new();
-
-    /// <summary>
-    /// Cached fee lookup. Key: (fromRelation, toRelation). Value: cost in roubles.
-    /// </summary>
-    private Dictionary<(STFactionRelationType, STFactionRelationType), int> _feeCache = new();
 
     /// <summary>
     /// Maps alias factions to their primary. E.g. "Rookies" -> "Loners".
@@ -117,7 +110,6 @@ public sealed class STFactionRelationsCartridgeSystem : EntitySystem
         SubscribeLocalEvent<RoundRestartCleanupEvent>(OnRoundRestart);
 
         RebuildDefaultsCache();
-        RebuildFeeCache();
         LoadFromDatabaseAsync();
         LoadProposalsFromDatabaseAsync();
 
@@ -134,9 +126,6 @@ public sealed class STFactionRelationsCartridgeSystem : EntitySystem
     {
         if (args.WasModified<STFactionRelationDefaultsPrototype>())
             RebuildDefaultsCache();
-
-        if (args.WasModified<STFactionRelationFeePrototype>())
-            RebuildFeeCache();
     }
 
     public override void Update(float frameTime)
@@ -175,46 +164,33 @@ public sealed class STFactionRelationsCartridgeSystem : EntitySystem
         if (expired.Count == 0)
             return;
 
-        var refundRate = _config.GetCVar(STCCVars.FactionRelationsRefundOnExpiration);
-
         foreach (var key in expired)
         {
             if (!_pendingProposals.TryGetValue(key, out var proposal))
                 continue;
 
-            DepositRefund(proposal.InitiatingFaction, proposal.FeePaid, refundRate,
-                $"Proposal to {proposal.TargetFaction} expired");
-
             _pendingProposals.Remove(key);
             DeleteProposalAsync(key.Item1, key.Item2);
 
-            BroadcastRelationAnnouncement(
-                proposal.InitiatingFaction,
-                proposal.TargetFaction,
-                proposal.ProposedRelation,
-                STFactionRelationAnnouncementKind.ProposalExpired,
-                proposal.CustomMessage);
+            if (proposal.Broadcast)
+            {
+                BroadcastRelationAnnouncement(
+                    proposal.InitiatingFaction,
+                    proposal.TargetFaction,
+                    proposal.ProposedRelation,
+                    STFactionRelationAnnouncementKind.ProposalExpired,
+                    proposal.CustomMessage);
+            }
         }
 
         BroadcastUiUpdate();
     }
 
     /// <summary>
-    /// Expires all pending proposals on round restart with partial refunds.
+    /// Clears all pending proposals on round restart.
     /// </summary>
     private void OnRoundRestart(RoundRestartCleanupEvent ev)
     {
-        if (_pendingProposals.Count == 0)
-            return;
-
-        var refundRate = _config.GetCVar(STCCVars.FactionRelationsRefundOnExpiration);
-
-        foreach (var (_, proposal) in _pendingProposals)
-        {
-            DepositRefund(proposal.InitiatingFaction, proposal.FeePaid, refundRate,
-                $"Proposal to {proposal.TargetFaction} expired (round ended)");
-        }
-
         _pendingProposals.Clear();
         ClearProposalsAsync();
     }
@@ -258,23 +234,6 @@ public sealed class STFactionRelationsCartridgeSystem : EntitySystem
         }
     }
 
-    /// <summary>
-    /// Rebuilds the fee lookup from the fee prototype.
-    /// </summary>
-    private void RebuildFeeCache()
-    {
-        _feeCache = new Dictionary<(STFactionRelationType, STFactionRelationType), int>();
-
-        var protoId = _config.GetCVar(STCCVars.FactionRelationsFeePrototype);
-        if (!_protoManager.TryIndex<STFactionRelationFeePrototype>(protoId, out var proto))
-            return;
-
-        foreach (var fee in proto.Fees)
-        {
-            _feeCache[(fee.From, fee.To)] = fee.Cost;
-        }
-    }
-
     #endregion
 
     #region Database Loading
@@ -314,7 +273,7 @@ public sealed class STFactionRelationsCartridgeSystem : EntitySystem
                     (STFactionRelationType) p.ProposedRelationType,
                     p.CustomMessage,
                     p.CreatedAt,
-                    p.FeePaid);
+                    p.Broadcast);
             }
         }
         catch (Exception e)
@@ -436,26 +395,6 @@ public sealed class STFactionRelationsCartridgeSystem : EntitySystem
     }
 
     /// <summary>
-    /// Gets the fee for a given relation transition.
-    /// </summary>
-    public int GetFee(STFactionRelationType from, STFactionRelationType to)
-    {
-        return _feeCache.GetValueOrDefault((from, to), 0);
-    }
-
-    /// <summary>
-    /// Gets the fee entries list for sending to clients.
-    /// </summary>
-    public List<STFactionRelationFeeEntry> GetFeeEntries()
-    {
-        var protoId = _config.GetCVar(STCCVars.FactionRelationsFeePrototype);
-        if (!_protoManager.TryIndex<STFactionRelationFeePrototype>(protoId, out var proto))
-            return new List<STFactionRelationFeeEntry>();
-
-        return proto.Fees;
-    }
-
-    /// <summary>
     /// Gets pending proposals involving a faction (both incoming and outgoing).
     /// </summary>
     public (List<STFactionRelationProposalData> Incoming, List<STFactionRelationProposalData> Outgoing) GetProposalsForFaction(string faction)
@@ -520,16 +459,19 @@ public sealed class STFactionRelationsCartridgeSystem : EntitySystem
     #region Relation Changes
 
     /// <summary>
-    /// Attempts a faction relation change. Handles fee deduction, cooldown checking,
-    /// and determines whether the change is instant (escalation) or creates a proposal (cooperation).
-    /// Only the initiator pays the fee.
+    /// Attempts a faction relation change. Handles cooldown checking and determines whether
+    /// the change is instant (escalation) or creates a proposal (cooperation).
+    /// For bilateral proposals, the <paramref name="broadcast"/> flag controls whether
+    /// intermediate states (sent/rejected/expired) are announced to all players.
+    /// Unilateral changes and accepted proposals are always announced.
     /// </summary>
     public STFactionRelationChangeResult TryChangeRelation(
         EntityUid initiatorUid,
         string initiatingFaction,
         string targetFaction,
         STFactionRelationType proposedRelation,
-        string? customMessage)
+        string? customMessage,
+        bool broadcast = true)
     {
         initiatingFaction = ResolvePrimary(initiatingFaction);
         targetFaction = ResolvePrimary(targetFaction);
@@ -552,17 +494,6 @@ public sealed class STFactionRelationsCartridgeSystem : EntitySystem
         if (_pairCooldowns.TryGetValue(key, out var expiry) && expiry > _timing.CurTime)
             return STFactionRelationChangeResult.OnCooldown;
 
-        var fee = GetFee(currentRelation, proposedRelation);
-        if (fee > 0)
-        {
-            var balance = _currency.CountRoubles(initiatorUid);
-            if (balance < fee)
-                return STFactionRelationChangeResult.InsufficientFunds;
-
-            if (!_currency.TryDeductRoubles(initiatorUid, fee))
-                return STFactionRelationChangeResult.InsufficientFunds;
-        }
-
         var maxLen = _config.GetCVar(STCCVars.FactionRelationsCustomMessageMaxLength);
         if (customMessage != null && customMessage.Length > maxLen)
             customMessage = customMessage[..maxLen];
@@ -579,23 +510,26 @@ public sealed class STFactionRelationsCartridgeSystem : EntitySystem
                 proposedRelation,
                 customMessage,
                 DateTime.UtcNow,
-                fee);
+                broadcast);
 
             _pendingProposals[proposalKey] = data;
-            SaveProposalAsync(initiatingFaction, targetFaction, (int) proposedRelation, customMessage, fee);
+            SaveProposalAsync(initiatingFaction, targetFaction, (int) proposedRelation, customMessage, broadcast);
 
-            BroadcastRelationAnnouncement(
-                initiatingFaction,
-                targetFaction,
-                proposedRelation,
-                STFactionRelationAnnouncementKind.ProposalSent,
-                customMessage);
+            if (broadcast)
+            {
+                BroadcastRelationAnnouncement(
+                    initiatingFaction,
+                    targetFaction,
+                    proposedRelation,
+                    STFactionRelationAnnouncementKind.ProposalSent,
+                    customMessage);
+            }
 
             BroadcastUiUpdate();
             return STFactionRelationChangeResult.ProposalCreated;
         }
 
-        // Unilateral escalation -- apply immediately
+        // Unilateral escalation -- apply immediately (always broadcast)
         SetRelation(initiatingFaction, targetFaction, proposedRelation,
             broadcast: true,
             customMessage: customMessage,
@@ -606,7 +540,7 @@ public sealed class STFactionRelationsCartridgeSystem : EntitySystem
 
     /// <summary>
     /// Accepts a pending proposal targeting the accepting faction.
-    /// The full fee paid by the initiator is deposited to the accepting faction's claimable funds.
+    /// Always broadcasts the resulting relation change.
     /// </summary>
     public STFactionRelationChangeResult AcceptProposal(
         EntityUid acceptorUid,
@@ -616,13 +550,6 @@ public sealed class STFactionRelationsCartridgeSystem : EntitySystem
         var proposalKey = (initiatingFaction, acceptingFaction);
         if (!_pendingProposals.TryGetValue(proposalKey, out var proposal))
             return STFactionRelationChangeResult.ProposalNotFound;
-
-        if (proposal.FeePaid > 0)
-        {
-            DepositClaimableFundsAsync(acceptingFaction, proposal.FeePaid,
-                $"Accepted proposal from {initiatingFaction}");
-            Log.Info($"Faction relations: deposited {proposal.FeePaid} RU to {acceptingFaction} for accepting proposal from {initiatingFaction}.");
-        }
 
         _pendingProposals.Remove(proposalKey);
         DeleteProposalAsync(initiatingFaction, acceptingFaction);
@@ -637,7 +564,7 @@ public sealed class STFactionRelationsCartridgeSystem : EntitySystem
 
     /// <summary>
     /// Rejects a pending proposal targeting the rejecting faction.
-    /// A partial refund is deposited to the initiator's claimable funds.
+    /// Only broadcasts if the original proposal had broadcast enabled.
     /// </summary>
     public STFactionRelationChangeResult RejectProposal(
         string rejectingFaction,
@@ -647,37 +574,31 @@ public sealed class STFactionRelationsCartridgeSystem : EntitySystem
         if (!_pendingProposals.TryGetValue(proposalKey, out var proposal))
             return STFactionRelationChangeResult.ProposalNotFound;
 
-        var refundRate = _config.GetCVar(STCCVars.FactionRelationsRefundOnRejection);
-        DepositRefund(proposal.InitiatingFaction, proposal.FeePaid, refundRate,
-            $"Proposal to {rejectingFaction} rejected");
-
         _pendingProposals.Remove(proposalKey);
         DeleteProposalAsync(initiatingFaction, rejectingFaction);
 
-        BroadcastRelationAnnouncement(
-            initiatingFaction,
-            rejectingFaction,
-            proposal.ProposedRelation,
-            STFactionRelationAnnouncementKind.ProposalRejected,
-            proposal.CustomMessage);
+        if (proposal.Broadcast)
+        {
+            BroadcastRelationAnnouncement(
+                initiatingFaction,
+                rejectingFaction,
+                proposal.ProposedRelation,
+                STFactionRelationAnnouncementKind.ProposalRejected,
+                proposal.CustomMessage);
+        }
 
         BroadcastUiUpdate();
         return STFactionRelationChangeResult.ProposalRejected;
     }
 
     /// <summary>
-    /// Cancels an outgoing proposal. A partial refund is deposited to the initiator's claimable funds.
+    /// Cancels an outgoing proposal.
     /// </summary>
     public void CancelProposal(string initiatingFaction, string targetFaction)
     {
         var proposalKey = (initiatingFaction, targetFaction);
-        if (!_pendingProposals.TryGetValue(proposalKey, out var proposal))
+        if (!_pendingProposals.ContainsKey(proposalKey))
             return;
-
-        // Lower refund rate for voluntary cancellation vs rejection/expiration
-        var refundRate = _config.GetCVar(STCCVars.FactionRelationsRefundOnCancellation);
-        DepositRefund(proposal.InitiatingFaction, proposal.FeePaid, refundRate,
-            $"Proposal to {targetFaction} cancelled");
 
         _pendingProposals.Remove(proposalKey);
         DeleteProposalAsync(initiatingFaction, targetFaction);
@@ -764,44 +685,15 @@ public sealed class STFactionRelationsCartridgeSystem : EntitySystem
         }
     }
 
-    private async void SaveProposalAsync(string initiatingFaction, string targetFaction, int proposedRelationType, string? customMessage, int feePaid)
+    private async void SaveProposalAsync(string initiatingFaction, string targetFaction, int proposedRelationType, string? customMessage, bool broadcast)
     {
         try
         {
-            await _dbManager.SetStalkerFactionRelationProposalAsync(initiatingFaction, targetFaction, proposedRelationType, customMessage, feePaid);
+            await _dbManager.SetStalkerFactionRelationProposalAsync(initiatingFaction, targetFaction, proposedRelationType, customMessage, broadcast);
         }
         catch (Exception e)
         {
             Log.Error($"Failed to save faction relation proposal to database: {e}");
-        }
-    }
-
-    /// <summary>
-    /// Deposits a partial refund into the claimable funds pool for a faction.
-    /// The faction leader can claim these funds at the Igor NPC.
-    /// </summary>
-    private void DepositRefund(string faction, int feePaid, float refundRate, string reason)
-    {
-        if (feePaid <= 0 || refundRate <= 0f)
-            return;
-
-        var refundAmount = (int) Math.Round(feePaid * Math.Clamp(refundRate, 0f, 1f));
-        if (refundAmount <= 0)
-            return;
-
-        DepositClaimableFundsAsync(faction, refundAmount, reason);
-        Log.Info($"Faction relations: deposited {refundAmount} RU refund for {faction} ({reason}).");
-    }
-
-    private async void DepositClaimableFundsAsync(string faction, int amount, string reason)
-    {
-        try
-        {
-            await _dbManager.AddStalkerFactionClaimableFundsAsync(faction, amount, reason);
-        }
-        catch (Exception e)
-        {
-            Log.Error($"Failed to deposit claimable funds for {faction}: {e}");
         }
     }
 
@@ -831,29 +723,17 @@ public sealed class STFactionRelationsCartridgeSystem : EntitySystem
 
     /// <summary>
     /// Removes any pending proposals between two factions (in either direction).
-    /// Deposits partial refunds since the proposals became moot due to a direct relation change.
     /// </summary>
     private void RemoveProposalsBetween(string factionA, string factionB)
     {
         var keyAB = (factionA, factionB);
         var keyBA = (factionB, factionA);
-        var refundRate = _config.GetCVar(STCCVars.FactionRelationsRefundOnExpiration);
 
-        if (_pendingProposals.TryGetValue(keyAB, out var proposalAB))
-        {
-            DepositRefund(proposalAB.InitiatingFaction, proposalAB.FeePaid, refundRate,
-                $"Proposal to {factionB} superseded by direct relation change");
-            _pendingProposals.Remove(keyAB);
+        if (_pendingProposals.Remove(keyAB))
             DeleteProposalAsync(factionA, factionB);
-        }
 
-        if (_pendingProposals.TryGetValue(keyBA, out var proposalBA))
-        {
-            DepositRefund(proposalBA.InitiatingFaction, proposalBA.FeePaid, refundRate,
-                $"Proposal to {factionA} superseded by direct relation change");
-            _pendingProposals.Remove(keyBA);
+        if (_pendingProposals.Remove(keyBA))
             DeleteProposalAsync(factionB, factionA);
-        }
     }
 
     #endregion
@@ -1016,4 +896,4 @@ public sealed record STFactionRelationProposalData(
     STFactionRelationType ProposedRelation,
     string? CustomMessage,
     DateTime CreatedAt,
-    int FeePaid);
+    bool Broadcast);

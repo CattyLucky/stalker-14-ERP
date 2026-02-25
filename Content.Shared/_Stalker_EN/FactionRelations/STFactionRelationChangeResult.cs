@@ -29,11 +29,6 @@ public enum STFactionRelationChangeResult : byte
     ProposalRejected,
 
     /// <summary>
-    /// The initiating leader does not have enough roubles.
-    /// </summary>
-    InsufficientFunds,
-
-    /// <summary>
     /// The faction pair is currently on cooldown.
     /// </summary>
     OnCooldown,

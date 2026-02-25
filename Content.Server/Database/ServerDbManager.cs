@@ -407,14 +407,9 @@ namespace Content.Server.Database
 
         // stalker-en-changes: Faction relation proposals
         Task<List<StalkerFactionRelationProposal>> GetAllStalkerFactionRelationProposalsAsync();
-        Task SetStalkerFactionRelationProposalAsync(string initiatingFaction, string targetFaction, int proposedRelationType, string? customMessage, int feePaid);
+        Task SetStalkerFactionRelationProposalAsync(string initiatingFaction, string targetFaction, int proposedRelationType, string? customMessage, bool broadcast);
         Task DeleteStalkerFactionRelationProposalAsync(string initiatingFaction, string targetFaction);
         Task ClearAllStalkerFactionRelationProposalsAsync();
-
-        // stalker-en-changes: Claimable funds for faction relation refunds
-        Task AddStalkerFactionClaimableFundsAsync(string faction, int amount, string reason);
-        Task<int> GetStalkerFactionClaimableFundsTotalAsync(string faction);
-        Task DeleteAllStalkerFactionClaimableFundsByFactionAsync(string faction);
         #endregion
     }
     /// <summary>
@@ -1187,10 +1182,10 @@ namespace Content.Server.Database
             return RunDbCommand(() => _db.GetAllStalkerFactionRelationProposalsAsync());
         }
 
-        public Task SetStalkerFactionRelationProposalAsync(string initiatingFaction, string targetFaction, int proposedRelationType, string? customMessage, int feePaid)
+        public Task SetStalkerFactionRelationProposalAsync(string initiatingFaction, string targetFaction, int proposedRelationType, string? customMessage, bool broadcast)
         {
             DbWriteOpsMetric.Inc();
-            return RunDbCommand(() => _db.SetStalkerFactionRelationProposalAsync(initiatingFaction, targetFaction, proposedRelationType, customMessage, feePaid));
+            return RunDbCommand(() => _db.SetStalkerFactionRelationProposalAsync(initiatingFaction, targetFaction, proposedRelationType, customMessage, broadcast));
         }
 
         public Task DeleteStalkerFactionRelationProposalAsync(string initiatingFaction, string targetFaction)
@@ -1203,25 +1198,6 @@ namespace Content.Server.Database
         {
             DbWriteOpsMetric.Inc();
             return RunDbCommand(() => _db.ClearAllStalkerFactionRelationProposalsAsync());
-        }
-
-        // stalker-en-changes: Claimable funds for faction relation refunds
-        public Task AddStalkerFactionClaimableFundsAsync(string faction, int amount, string reason)
-        {
-            DbWriteOpsMetric.Inc();
-            return RunDbCommand(() => _db.AddStalkerFactionClaimableFundsAsync(faction, amount, reason));
-        }
-
-        public Task<int> GetStalkerFactionClaimableFundsTotalAsync(string faction)
-        {
-            DbReadOpsMetric.Inc();
-            return RunDbCommand(() => _db.GetStalkerFactionClaimableFundsTotalAsync(faction));
-        }
-
-        public Task DeleteAllStalkerFactionClaimableFundsByFactionAsync(string faction)
-        {
-            DbWriteOpsMetric.Inc();
-            return RunDbCommand(() => _db.DeleteAllStalkerFactionClaimableFundsByFactionAsync(faction));
         }
 
         public Task SetStalkerBandAsync(ProtoId<STBandPrototype> band, float rewardPoints)

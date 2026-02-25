@@ -154,7 +154,6 @@ st-faction-relations-custom-message = A message was attached: "{$message}"
 # =============================================
 # Bands managing window - Proposal / fee / cooldown UI strings
 # =============================================
-bands-managing-window-balance = Balance: {$amount} RU
 bands-managing-window-custom-message-label = Message:
 bands-managing-window-custom-message-placeholder = Optional broadcast message...
 bands-managing-window-incoming-proposals-header = Incoming Proposals
@@ -165,17 +164,9 @@ bands-managing-window-accept-button = Accept
 bands-managing-window-reject-button = Reject
 bands-managing-window-cancel-button = Cancel
 bands-managing-window-cooldown = ({$seconds}s)
-bands-managing-window-relation-fee = Cost: {$cost} RU
-bands-managing-window-relation-free = Free
 bands-managing-window-relation-requires-approval = Requires their approval
 bands-managing-window-relation-instant = Takes effect immediately
 bands-managing-window-relation-declare-button = Declare
 bands-managing-window-relation-propose-button = Propose
-bands-managing-window-relation-confirm-pay = Pay {$cost} RU?
 bands-managing-window-relation-confirm-free = Confirm?
-
-# =============================================
-# Claimable funds UI
-# =============================================
-bands-managing-window-claimable-funds = Unclaimed Funds: {$amount} RU
-bands-managing-window-claim-button = Claim All
+bands-managing-window-relation-broadcast = Broadcast proposal

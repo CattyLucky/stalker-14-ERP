@@ -70,16 +70,6 @@ namespace Content.Shared._Stalker.Bands
         public List<STFactionRelationProposalEntry> OutgoingProposals { get; }
 
         /// <summary>
-        /// Fee entries for relation changes (sent as list, client builds lookup).
-        /// </summary>
-        public List<STFactionRelationFeeEntry> Fees { get; }
-
-        /// <summary>
-        /// The player's current rouble balance for affordability display.
-        /// </summary>
-        public int PlayerRoubles { get; }
-
-        /// <summary>
         /// Per-pair cooldown remaining in seconds. Key: target faction name.
         /// </summary>
         public Dictionary<string, float> CooldownsRemaining { get; }
@@ -88,11 +78,6 @@ namespace Content.Shared._Stalker.Bands
         /// When true, the Relations tab should be hidden (player is in a restricted faction).
         /// </summary>
         public bool HideRelationsTab { get; }
-
-        /// <summary>
-        /// Total roubles available to claim as refunds from rejected/cancelled/expired proposals.
-        /// </summary>
-        public int ClaimableFundsTotal { get; }
 
         /// <summary>
         /// Maps faction IDs to human-readable display names (e.g. "ClearSky" → "Clear Sky").
@@ -114,11 +99,8 @@ namespace Content.Shared._Stalker.Bands
             List<STFactionRelationEntry>? factionRelations = null,
             List<STFactionRelationProposalEntry>? incomingProposals = null,
             List<STFactionRelationProposalEntry>? outgoingProposals = null,
-            List<STFactionRelationFeeEntry>? fees = null,
-            int playerRoubles = 0,
             Dictionary<string, float>? cooldownsRemaining = null,
             bool hideRelationsTab = false,
-            int claimableFundsTotal = 0,
             Dictionary<string, string>? factionDisplayNames = null)
             // stalker-en-changes end
         {
@@ -135,11 +117,8 @@ namespace Content.Shared._Stalker.Bands
             FactionRelations = factionRelations ?? new List<STFactionRelationEntry>();
             IncomingProposals = incomingProposals ?? new List<STFactionRelationProposalEntry>();
             OutgoingProposals = outgoingProposals ?? new List<STFactionRelationProposalEntry>();
-            Fees = fees ?? new List<STFactionRelationFeeEntry>();
-            PlayerRoubles = playerRoubles;
             CooldownsRemaining = cooldownsRemaining ?? new Dictionary<string, float>();
             HideRelationsTab = hideRelationsTab;
-            ClaimableFundsTotal = claimableFundsTotal;
             FactionDisplayNames = factionDisplayNames ?? new Dictionary<string, string>();
             // stalker-en-changes end
         }
@@ -248,12 +227,14 @@ namespace Content.Shared._Stalker.Bands
         public string TargetFaction { get; }
         public int ProposedRelation { get; }
         public string? CustomMessage { get; }
+        public bool Broadcast { get; }
 
-        public BandsManagingProposeRelationMessage(string targetFaction, int proposedRelation, string? customMessage)
+        public BandsManagingProposeRelationMessage(string targetFaction, int proposedRelation, string? customMessage, bool broadcast)
         {
             TargetFaction = targetFaction;
             ProposedRelation = proposedRelation;
             CustomMessage = customMessage;
+            Broadcast = broadcast;
         }
     }
 
@@ -287,13 +268,6 @@ namespace Content.Shared._Stalker.Bands
         }
     }
 
-    /// <summary>
-    /// Message from client to server to claim all pending refund funds at Igor.
-    /// </summary>
-    [Serializable, NetSerializable]
-    public sealed class BandsManagingClaimFundsMessage : BoundUserInterfaceMessage
-    {
-    }
     // stalker-en-changes end
 }
 

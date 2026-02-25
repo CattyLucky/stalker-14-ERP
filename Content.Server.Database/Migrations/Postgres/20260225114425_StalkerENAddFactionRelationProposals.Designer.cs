@@ -1463,6 +1463,10 @@ namespace Content.Server.Database.Migrations.Postgres
                         .HasColumnType("text")
                         .HasColumnName("target_faction");
 
+                    b.Property<bool>("Broadcast")
+                        .HasColumnType("boolean")
+                        .HasColumnName("broadcast");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
