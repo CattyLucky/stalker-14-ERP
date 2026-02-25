@@ -90,6 +90,8 @@
     MutantPartChimeraTooth: 1000
     ClothingMaskChimera: 1 # its gross why would they want it
     MutantPartIzlomArm: 1150
+    MutantPartBurerBrain: 2500
+    MutantPartControllerBrain: 4375
 
     #Fish -------- Unc * 1.5
     #Only anomalous fish

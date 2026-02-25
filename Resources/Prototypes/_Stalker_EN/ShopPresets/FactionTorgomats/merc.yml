@@ -91,6 +91,8 @@
     MutantPartPseudogiantHeart: 2500
     MutantPartZombieHand: 380
     MutantPartIzlomArm: 525
+    MutantPartBurerBrain: 1000
+    MutantPartControllerBrain: 2000
 
   categories:
     - name: shop-category-weapons
