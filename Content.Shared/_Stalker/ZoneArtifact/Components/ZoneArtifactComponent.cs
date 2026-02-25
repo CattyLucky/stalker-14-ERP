@@ -1,4 +1,4 @@
-﻿using Robust.Shared.Prototypes;
+using Robust.Shared.Prototypes;
 
 namespace Content.Shared._Stalker.ZoneArtifact.Components; // ST14-EN: Moved to shared
 

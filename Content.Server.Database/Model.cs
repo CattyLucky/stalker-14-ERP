@@ -52,6 +52,7 @@ namespace Content.Server.Database
         public DbSet<StalkerBand> StalkerBands { get; set; } = null!; // stalker-changes
         public DbSet<StalkerFaction> StalkerFactions { get; set; } = null!; // stalker-changes
         public DbSet<StalkerZoneOwnership> StalkerZoneOwnerships { get; set; } = null!; // stalker-changes
+        public DbSet<StalkerFactionRelation> StalkerFactionRelations { get; set; } = null!; // stalker-en-changes
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Preference>()
@@ -363,6 +364,11 @@ namespace Content.Server.Database
                 .HasForeignKey(z => z.FactionId)
                 .OnDelete(DeleteBehavior.Cascade);
             // stalker-changes-ends
+
+            // stalker-en-changes-start
+            modelBuilder.Entity<StalkerFactionRelation>()
+                .HasKey(r => new { r.FactionA, r.FactionB });
+            // stalker-en-changes-end
 
             // Changes for modern HWID integration
             modelBuilder.Entity<Player>()
@@ -1485,6 +1491,25 @@ namespace Content.Server.Database
         /// When the zone was captured by current owner
         /// </summary>
         public DateTime? LastCapturedByCurrentOwnerAt { get; set; }
+    }
+
+    /// <summary>
+    /// Stores a faction relation override between two display factions.
+    /// Composite key: (FactionA, FactionB), always stored alphabetically.
+    /// </summary>
+    public sealed class StalkerFactionRelation
+    {
+        [Required]
+        public string FactionA { get; set; } = default!;
+
+        [Required]
+        public string FactionB { get; set; } = default!;
+
+        /// <summary>
+        /// Relation type stored as int (maps to STFactionRelationType enum).
+        /// </summary>
+        [Required]
+        public int RelationType { get; set; }
     }
 
     #endregion

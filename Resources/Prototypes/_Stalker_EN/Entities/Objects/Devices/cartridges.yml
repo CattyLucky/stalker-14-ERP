@@ -1,0 +1,17 @@
+- type: entity
+  parent: BaseItem
+  id: STFactionRelationsCartridge
+  name: faction relations cartridge
+  description: A program showing relations between Zone factions.
+  components:
+  - type: Sprite
+    sprite: Objects/Devices/cartridge.rsi
+    state: cart-y
+  - type: UIFragment
+    ui: !type:FactionRelationsUi
+  - type: Cartridge
+    programName: st-faction-relations-program-name
+    icon:
+      sprite: Objects/Misc/books.rsi
+      state: book_icon
+  - type: STFactionRelationsCartridge
