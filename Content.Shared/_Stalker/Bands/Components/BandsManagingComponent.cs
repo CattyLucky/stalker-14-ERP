@@ -9,7 +9,7 @@ namespace Content.Shared._Stalker.Bands.Components
     /// <summary>
     /// Component attached to entities that can open the Band Management UI.
     /// </summary>
-    [RegisterComponent, NetworkedComponent]
+    [RegisterComponent, NetworkedComponent, AutoGenerateComponentState] // stalker-en-changes: added AutoGenerateComponentState
     // [Access(typeof(SharedBandsSystem))]
     public sealed partial class BandsManagingComponent : Component
     {
@@ -26,8 +26,8 @@ namespace Content.Shared._Stalker.Bands.Components
         /// When set, the Relations tab uses this instead of resolving from the player's band.
         /// Maps to faction names in STFactionRelationDefaultsPrototype.
         /// </summary>
-        [DataField]
-        public string? Faction { get; private set; }
+        [DataField, AutoNetworkedField]
+        public string? Faction;
         // stalker-en-changes end
     }
 }
