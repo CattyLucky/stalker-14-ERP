@@ -89,11 +89,12 @@ public sealed class RitualChasmSystem : SharedRitualChasmSystem
 
             ritualChasmEntity.Comp.ThrowBackQueue.Enqueue((
                 spawnedUid, // spawn in nullspace for now, will be teleported back to chasm LATER
-                outDirection,
+                outDirection + RobustRandom.NextVector2(0.1f), // add some HARDCODED randomization to throw direction
                 initialTime + accumulatedTime
             ));
+            PhysicsSystem.SetAngularVelocity(spawnedUid, RobustRandom.NextFloat(-15f, 15f)); // ALSO hardcoded :joy:
 
-            accumulatedTime += TimeSpan.FromSeconds(1.5f); // ST14-EN: Arbitrary delay between each throw back, can be tweaked later
+            accumulatedTime += TimeSpan.FromSeconds(0.5f); // ST14-EN: Arbitrary delay between each throw back, can be tweaked later
         }
 
         return;

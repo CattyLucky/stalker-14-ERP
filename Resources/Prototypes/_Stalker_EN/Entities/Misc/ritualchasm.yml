@@ -20,7 +20,12 @@
         volume: 5
         pitch: 0.5
       path: /Audio/Effects/Gasp/gasp_male2.ogg
+    fallSound:
+      params:
+        volume: 6
+      path: /Audio/_Stalker_EN/Effeccts/fall_impact.ogg
     relocatedLocalPopup: ritual-chasm-relocated-popup
+    relocatedStunDuration: 10
     throwForce: 15
     rewardedPerTier: 1.25
     rewardedPerTooth: 1.75

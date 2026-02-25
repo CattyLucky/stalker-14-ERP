@@ -11,8 +11,12 @@ namespace Content.Shared._Stalker_EN.RitualChasm;
 ///         reward that matches with tier
 /// </summary>
 [RegisterComponent, NetworkedComponent]
+[AutoGenerateComponentState]
 public sealed partial class RitualChasmComponent : Component
 {
+    [DataField, ViewVariables(VVAccess.ReadWrite)]
+    public TimeSpan RelocatedStunDuration = TimeSpan.Zero;
+
     [DataField, ViewVariables(VVAccess.ReadWrite)]
     public float ThrowForce = 25f;
 
@@ -35,6 +39,9 @@ public sealed partial class RitualChasmComponent : Component
 
     [DataField, ViewVariables(VVAccess.ReadWrite)]
     public SoundSpecifier? ThrowSound = null;
+
+    [DataField, ViewVariables(VVAccess.ReadWrite)]
+    public SoundSpecifier? FallSound = null;
 
     /// <summary>
     ///     Sound played after something is relocated.
@@ -69,7 +76,8 @@ public sealed partial class RitualChasmComponent : Component
     /// <summary>
     ///     Things currently falling into the chasm, and their expected time of total descent.
     /// </summary>
-    public Queue<(EntityUid, TimeSpan)> FallQueue = new();
+    [AutoNetworkedField]
+    public Queue<(NetEntity, TimeSpan)> FallQueue = new();
 
     /// <summary>
     ///     It is assumed that first entity to leave will have lowest time-value,

@@ -59,9 +59,6 @@
     - cash
   - type: StackLayerThreshold
     thresholds: [1]
-  - type: Tag
-    tags:
-    - ToothStalker
 
 - type: currency
   id: ToothStalker

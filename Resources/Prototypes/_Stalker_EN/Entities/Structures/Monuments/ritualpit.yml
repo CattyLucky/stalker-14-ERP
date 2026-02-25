@@ -5,6 +5,12 @@
   description: It has a weird emblem on it. You almost want to sacrifice your worth to the rot.
   suffix: ST, Mapping
   components:
-    - type: Sprite
-      sprite: /Textures/_Stalker_EN/Structures/Monuments/ritualtower.rsi
-      state: ritualtower
+  - type: Sprite
+    sprite: /Textures/_Stalker_EN/Structures/Monuments/ritualtower.rsi
+    state: ritualtower
+  - type: AmbientSound
+    enabled: true
+    range: 30
+    volume: -6
+    sound:
+      path: /Audio/_Stalker_EN/Effects/ritualpit.ogg
