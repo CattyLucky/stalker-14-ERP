@@ -11,6 +11,7 @@ using Robust.Shared.Prototypes;
 using Robust.Shared.Utility;
 using Robust.Client.GameObjects;
 using Robust.Client.Graphics;
+using Robust.Shared.Timing;
 
 namespace Content.Client._Stalker.Bands.UI;
 
@@ -20,13 +21,41 @@ public sealed partial class BandsManagingWindow : FancyWindow
     public event Action<string>? OnAddMemberButtonPressed;
     public event Action<Guid>? OnRemoveMemberButtonPressed;
     public event Action<string>? OnBuyItemButtonPressed;
-    public event Action<string, int>? OnSetRelationButtonPressed; // stalker-en-changes
+    // stalker-en-changes start
+    public event Action<string, int, string?>? OnProposeRelationPressed;
+    public event Action<string, bool>? OnRespondProposalPressed;
+    public event Action<string>? OnCancelProposalPressed;
+    public event Action? OnClaimFundsPressed;
+    // stalker-en-changes end
 
     [Dependency] private readonly IPrototypeManager _prototypeManager = default!;
     [Dependency] private readonly IEntityManager _entityManager = default!;
 
     // stalker-en-changes start
+    [Dependency] private readonly IGameTiming _gameTiming = default!;
     private SpriteSystem? _spriteSystem;
+
+    private const int RelationsTabIndex = 3;
+    private const int MaxCustomMessageLength = 250;
+
+    /// <summary>
+    /// Custom message line edit, stored between state updates so the user's input persists.
+    /// </summary>
+    private LineEdit? _customMessageLineEdit;
+
+    /// <summary>
+    /// Tracks the user's uncommitted dropdown selections per faction.
+    /// Persists across UI state rebuilds so the user doesn't lose their choice.
+    /// </summary>
+    private readonly Dictionary<string, STFactionRelationType> _pendingSelections = new();
+
+    /// <summary>
+    /// Cooldown tracking for live countdown display.
+    /// </summary>
+    private readonly Dictionary<string, TimeSpan> _cooldownExpiries = new();
+    private readonly Dictionary<string, Label> _cooldownLabels = new();
+    private readonly Dictionary<string, OptionButton> _cooldownDropdowns = new();
+    private bool _lastCanManage;
     // stalker-en-changes end
 
     public BandsManagingWindow()
@@ -242,7 +271,23 @@ public sealed partial class BandsManagingWindow : FancyWindow
 
     private void UpdateRelationsTab(BandsManagingBoundUserInterfaceState state)
     {
+        // Hide entire Relations tab for restricted faction players
+        if (state.HideRelationsTab)
+        {
+            RelationsTab.Visible = false;
+            if (Tabs.CurrentTab == RelationsTabIndex)
+                Tabs.CurrentTab = 0;
+            return;
+        }
+
+        RelationsTab.Visible = true;
         RelationsList.Children.Clear();
+
+        // Clear cooldown tracking for rebuild
+        _cooldownExpiries.Clear();
+        _cooldownLabels.Clear();
+        _cooldownDropdowns.Clear();
+        _lastCanManage = state.CanManage;
 
         if (string.IsNullOrEmpty(state.PlayerFaction) || state.AllFactions.Count == 0)
         {
@@ -255,19 +300,218 @@ public sealed partial class BandsManagingWindow : FancyWindow
 
         _spriteSystem ??= _entityManager.System<SpriteSystem>();
 
-        // Build lookup from the flat relations list
-        var lookup = new Dictionary<(string, string), STFactionRelationType>();
-        foreach (var entry in state.FactionRelations)
+        // Build fee lookup from the list
+        var feeLookup = new Dictionary<(STFactionRelationType, STFactionRelationType), int>();
+        foreach (var fee in state.Fees)
         {
-            lookup[(entry.FactionA, entry.FactionB)] = entry.Relation;
+            feeLookup[(fee.From, fee.To)] = fee.Cost;
         }
 
+        // Build relation lookup
+        var relationLookup = new Dictionary<(string, string), STFactionRelationType>();
+        foreach (var entry in state.FactionRelations)
+        {
+            relationLookup[(entry.FactionA, entry.FactionB)] = entry.Relation;
+        }
+
+        // --- Balance display ---
+        RelationsList.AddChild(new Label
+        {
+            Text = Loc.GetString("bands-managing-window-balance", ("amount", state.PlayerRoubles)),
+            StyleClasses = { "LabelSecondaryColor" },
+            Margin = new Thickness(0, 0, 0, 4),
+        });
+
+        // --- Claimable funds section ---
+        if (state.CanManage && state.ClaimableFundsTotal > 0)
+        {
+            var claimRow = new BoxContainer
+            {
+                Orientation = BoxContainer.LayoutOrientation.Horizontal,
+                HorizontalExpand = true,
+                Margin = new Thickness(0, 0, 0, 8),
+                SeparationOverride = 8,
+            };
+            claimRow.AddChild(new Label
+            {
+                Text = Loc.GetString("bands-managing-window-claimable-funds", ("amount", state.ClaimableFundsTotal)),
+                VerticalAlignment = VAlignment.Center,
+            });
+            var claimBtn = new Button
+            {
+                Text = Loc.GetString("bands-managing-window-claim-button"),
+            };
+            claimBtn.OnPressed += _ => OnClaimFundsPressed?.Invoke();
+            claimRow.AddChild(claimBtn);
+            RelationsList.AddChild(claimRow);
+        }
+
+        // --- Custom message input ---
+        var msgContainer = new BoxContainer
+        {
+            Orientation = BoxContainer.LayoutOrientation.Horizontal,
+            HorizontalExpand = true,
+            Margin = new Thickness(0, 0, 0, 8),
+            SeparationOverride = 6,
+        };
+        msgContainer.AddChild(new Label
+        {
+            Text = Loc.GetString("bands-managing-window-custom-message-label"),
+            VerticalAlignment = VAlignment.Center,
+        });
+
+        // Preserve the user's typed text between UI state refreshes
+        var savedText = _customMessageLineEdit?.Text ?? "";
+        _customMessageLineEdit = new LineEdit
+        {
+            PlaceHolder = Loc.GetString("bands-managing-window-custom-message-placeholder"),
+            HorizontalExpand = true,
+            Text = savedText,
+            IsValid = s => s.Length <= MaxCustomMessageLength,
+        };
+        msgContainer.AddChild(_customMessageLineEdit);
+        RelationsList.AddChild(msgContainer);
+
+        // --- Incoming proposals ---
+        if (state.IncomingProposals.Count > 0)
+        {
+            RelationsList.AddChild(new Label
+            {
+                Text = Loc.GetString("bands-managing-window-incoming-proposals-header"),
+                StyleClasses = { "LabelHeading" },
+                Margin = new Thickness(0, 4, 0, 2),
+            });
+
+            foreach (var proposal in state.IncomingProposals)
+            {
+                var proposalRow = new BoxContainer
+                {
+                    Orientation = BoxContainer.LayoutOrientation.Horizontal,
+                    HorizontalExpand = true,
+                    Margin = new Thickness(0, 2),
+                    SeparationOverride = 6,
+                };
+
+                AddFactionIcon(proposalRow, proposal.InitiatingFaction);
+
+                var relationName = GetRelationDisplayName(proposal.ProposedRelation);
+                var labelText = Loc.GetString("bands-managing-window-incoming-proposal",
+                    ("faction", STFactionRelationHelpers.GetDisplayName(proposal.InitiatingFaction, state.FactionDisplayNames)),
+                    ("relation", relationName));
+
+                proposalRow.AddChild(new Label
+                {
+                    Text = labelText,
+                    HorizontalExpand = true,
+                    VerticalAlignment = VAlignment.Center,
+                });
+
+                var initiating = proposal.InitiatingFaction;
+
+                var acceptBtn = new Button
+                {
+                    Text = Loc.GetString("bands-managing-window-accept-button"),
+                    MinWidth = 60,
+                    VerticalAlignment = VAlignment.Center,
+                };
+                acceptBtn.OnPressed += _ => OnRespondProposalPressed?.Invoke(initiating, true);
+                proposalRow.AddChild(acceptBtn);
+
+                var rejectBtn = new Button
+                {
+                    Text = Loc.GetString("bands-managing-window-reject-button"),
+                    MinWidth = 60,
+                    VerticalAlignment = VAlignment.Center,
+                };
+                rejectBtn.OnPressed += _ => OnRespondProposalPressed?.Invoke(initiating, false);
+                proposalRow.AddChild(rejectBtn);
+
+                RelationsList.AddChild(proposalRow);
+
+                // Show custom message if present
+                if (!string.IsNullOrWhiteSpace(proposal.CustomMessage))
+                {
+                    RelationsList.AddChild(new Label
+                    {
+                        Text = $"  \"{proposal.CustomMessage}\"",
+                        StyleClasses = { "LabelSecondaryColor" },
+                        Margin = new Thickness(32, 0, 0, 2),
+                    });
+                }
+            }
+        }
+
+        // --- Outgoing proposals ---
+        if (state.OutgoingProposals.Count > 0)
+        {
+            RelationsList.AddChild(new Label
+            {
+                Text = Loc.GetString("bands-managing-window-outgoing-proposals-header"),
+                StyleClasses = { "LabelHeading" },
+                Margin = new Thickness(0, 4, 0, 2),
+            });
+
+            foreach (var proposal in state.OutgoingProposals)
+            {
+                var proposalRow = new BoxContainer
+                {
+                    Orientation = BoxContainer.LayoutOrientation.Horizontal,
+                    HorizontalExpand = true,
+                    Margin = new Thickness(0, 2),
+                    SeparationOverride = 6,
+                };
+
+                AddFactionIcon(proposalRow, proposal.TargetFaction);
+
+                var relationName = GetRelationDisplayName(proposal.ProposedRelation);
+                var labelText = Loc.GetString("bands-managing-window-outgoing-proposal",
+                    ("faction", STFactionRelationHelpers.GetDisplayName(proposal.TargetFaction, state.FactionDisplayNames)),
+                    ("relation", relationName));
+
+                proposalRow.AddChild(new Label
+                {
+                    Text = labelText,
+                    HorizontalExpand = true,
+                    VerticalAlignment = VAlignment.Center,
+                });
+
+                var target = proposal.TargetFaction;
+                var cancelBtn = new Button
+                {
+                    Text = Loc.GetString("bands-managing-window-cancel-button"),
+                    MinWidth = 60,
+                    VerticalAlignment = VAlignment.Center,
+                };
+                cancelBtn.OnPressed += _ => OnCancelProposalPressed?.Invoke(target);
+                proposalRow.AddChild(cancelBtn);
+
+                RelationsList.AddChild(proposalRow);
+            }
+        }
+
+        // --- Relations grid header ---
+        RelationsList.AddChild(new Label
+        {
+            Text = Loc.GetString("bands-managing-window-relations-header"),
+            StyleClasses = { "LabelHeading" },
+            Margin = new Thickness(0, 4, 0, 2),
+        });
+
+        // --- Faction relation rows ---
         foreach (var faction in state.AllFactions)
         {
             if (faction == state.PlayerFaction)
                 continue;
 
-            var row = new BoxContainer
+            // Vertical container: main row + detail row
+            var factionContainer = new BoxContainer
+            {
+                Orientation = BoxContainer.LayoutOrientation.Vertical,
+                HorizontalExpand = true,
+            };
+
+            // --- Main row ---
+            var mainRow = new BoxContainer
             {
                 Orientation = BoxContainer.LayoutOrientation.Horizontal,
                 HorizontalExpand = true,
@@ -275,31 +519,18 @@ public sealed partial class BandsManagingWindow : FancyWindow
                 SeparationOverride = 6,
             };
 
-            // Faction patch icon
-            if (STFactionPatchIcons.PatchStates.TryGetValue(faction, out var patch))
-            {
-                var specifier = new SpriteSpecifier.Rsi(patch.Rsi, patch.State);
-                row.AddChild(new TextureRect
-                {
-                    Texture = _spriteSystem.Frame0(specifier),
-                    TextureScale = new Vector2(1.5f, 1.5f),
-                    Stretch = TextureRect.StretchMode.KeepAspectCentered,
-                    MinSize = new Vector2(32, 32),
-                    VerticalAlignment = VAlignment.Center,
-                });
-            }
+            AddFactionIcon(mainRow, faction);
 
-            // Faction name
-            row.AddChild(new Label
+            mainRow.AddChild(new Label
             {
-                Text = faction,
+                Text = STFactionRelationHelpers.GetDisplayName(faction, state.FactionDisplayNames),
                 HorizontalExpand = true,
                 VerticalAlignment = VAlignment.Center,
             });
 
-            // Relation dropdown
             var key = STFactionRelationHelpers.NormalizePair(state.PlayerFaction, faction);
-            var currentRelation = lookup.GetValueOrDefault(key, STFactionRelationType.Neutral);
+            var currentRelation = relationLookup.GetValueOrDefault(key, STFactionRelationType.Neutral);
+            var isOnCooldown = state.CooldownsRemaining.TryGetValue(faction, out var cooldownSecs) && cooldownSecs > 0;
 
             var dropdown = new OptionButton
             {
@@ -312,17 +543,235 @@ public sealed partial class BandsManagingWindow : FancyWindow
             dropdown.AddItem(Loc.GetString("bands-managing-window-relation-hostile"), (int) STFactionRelationType.Hostile);
             dropdown.AddItem(Loc.GetString("bands-managing-window-relation-war"), (int) STFactionRelationType.War);
             dropdown.SelectId((int) currentRelation);
-            dropdown.Disabled = !state.CanManage;
+            dropdown.Disabled = !state.CanManage || isOnCooldown;
+
+            // --- Detail row (hidden by default) ---
+            var detailRow = new BoxContainer
+            {
+                Orientation = BoxContainer.LayoutOrientation.Horizontal,
+                HorizontalExpand = true,
+                Margin = new Thickness(32, 0, 0, 2),
+                SeparationOverride = 6,
+                Visible = false,
+            };
+
+            var feeLabel = new Label
+            {
+                StyleClasses = { "LabelSecondaryColor" },
+                VerticalAlignment = VAlignment.Center,
+            };
+            detailRow.AddChild(feeLabel);
+
+            detailRow.AddChild(new Label
+            {
+                Text = "·",
+                StyleClasses = { "LabelSecondaryColor" },
+                VerticalAlignment = VAlignment.Center,
+            });
+
+            var typeLabel = new Label
+            {
+                StyleClasses = { "LabelSecondaryColor" },
+                VerticalAlignment = VAlignment.Center,
+            };
+            detailRow.AddChild(typeLabel);
+
+            // --- Confirm button (hidden by default) ---
+            var confirmButton = new ConfirmButton
+            {
+                MinWidth = 80,
+                VerticalAlignment = VAlignment.Center,
+                Visible = false,
+            };
 
             var targetFaction = faction;
+
+            confirmButton.OnPressed += _ =>
+            {
+                if (!_pendingSelections.TryGetValue(targetFaction, out var selected))
+                    return;
+
+                var msg = string.IsNullOrWhiteSpace(_customMessageLineEdit?.Text)
+                    ? null
+                    : _customMessageLineEdit.Text;
+
+                OnProposeRelationPressed?.Invoke(targetFaction, (int) selected, msg);
+                _pendingSelections.Remove(targetFaction);
+            };
+
             dropdown.OnItemSelected += args =>
             {
                 dropdown.SelectId(args.Id);
-                OnSetRelationButtonPressed?.Invoke(targetFaction, args.Id);
+                var selectedRelation = (STFactionRelationType) args.Id;
+
+                if (selectedRelation == currentRelation)
+                {
+                    _pendingSelections.Remove(targetFaction);
+                    detailRow.Visible = false;
+                    confirmButton.Visible = false;
+                }
+                else
+                {
+                    _pendingSelections[targetFaction] = selectedRelation;
+                    UpdateDetailRow(feeLabel, typeLabel, confirmButton,
+                        currentRelation, selectedRelation, feeLookup, state.PlayerRoubles);
+                    detailRow.Visible = true;
+                }
             };
 
-            row.AddChild(dropdown);
-            RelationsList.AddChild(row);
+            mainRow.AddChild(dropdown);
+            mainRow.AddChild(confirmButton);
+
+            // --- Live cooldown label ---
+            if (isOnCooldown)
+            {
+                var cooldownLabel = new Label
+                {
+                    Text = Loc.GetString("bands-managing-window-cooldown", ("seconds", (int) cooldownSecs)),
+                    StyleClasses = { "LabelSecondaryColor" },
+                    VerticalAlignment = VAlignment.Center,
+                };
+                mainRow.AddChild(cooldownLabel);
+
+                // Track for live countdown updates in FrameUpdate
+                var expiryTime = _gameTiming.CurTime + TimeSpan.FromSeconds(cooldownSecs);
+                _cooldownExpiries[targetFaction] = expiryTime;
+                _cooldownLabels[targetFaction] = cooldownLabel;
+                _cooldownDropdowns[targetFaction] = dropdown;
+            }
+
+            factionContainer.AddChild(mainRow);
+            factionContainer.AddChild(detailRow);
+
+            // Restore pending selection if the user had one before the UI rebuilt
+            if (_pendingSelections.TryGetValue(faction, out var pendingSelection) && pendingSelection != currentRelation)
+            {
+                dropdown.SelectId((int) pendingSelection);
+                UpdateDetailRow(feeLabel, typeLabel, confirmButton,
+                    currentRelation, pendingSelection, feeLookup, state.PlayerRoubles);
+                detailRow.Visible = true;
+            }
+            else
+            {
+                _pendingSelections.Remove(faction);
+            }
+
+            RelationsList.AddChild(factionContainer);
+        }
+    }
+
+    private void UpdateDetailRow(
+        Label feeLabel,
+        Label typeLabel,
+        ConfirmButton confirmButton,
+        STFactionRelationType current,
+        STFactionRelationType selected,
+        Dictionary<(STFactionRelationType, STFactionRelationType), int> feeLookup,
+        int playerRoubles)
+    {
+        var cost = feeLookup.GetValueOrDefault((current, selected), 0);
+        var canAfford = playerRoubles >= cost || cost == 0;
+        var requiresConfirmation = STFactionRelationHelpers.RequiresConfirmation(current, selected);
+        var isEscalation = STFactionRelationHelpers.IsEscalation(current, selected);
+
+        // Fee display
+        feeLabel.Text = cost > 0
+            ? Loc.GetString("bands-managing-window-relation-fee", ("cost", cost))
+            : Loc.GetString("bands-managing-window-relation-free");
+        feeLabel.FontColorOverride = null;
+
+        // Change type indicator
+        typeLabel.Text = requiresConfirmation
+            ? Loc.GetString("bands-managing-window-relation-requires-approval")
+            : Loc.GetString("bands-managing-window-relation-instant");
+
+        typeLabel.FontColorOverride = GetRelationColor(selected);
+
+        // Confirm button: visible only when player can afford
+        if (canAfford)
+        {
+            confirmButton.Text = isEscalation
+                ? Loc.GetString("bands-managing-window-relation-declare-button")
+                : Loc.GetString("bands-managing-window-relation-propose-button");
+
+            confirmButton.ConfirmationText = cost > 0
+                ? Loc.GetString("bands-managing-window-relation-confirm-pay", ("cost", cost))
+                : Loc.GetString("bands-managing-window-relation-confirm-free");
+
+            confirmButton.Visible = true;
+        }
+        else
+        {
+            confirmButton.Visible = false;
+        }
+    }
+
+    private static Color? GetRelationColor(STFactionRelationType type)
+    {
+        return STFactionRelationColors.GetColor(type);
+    }
+
+    private void AddFactionIcon(BoxContainer row, string faction)
+    {
+        if (STFactionPatchIcons.PatchStates.TryGetValue(faction, out var patch))
+        {
+            _spriteSystem ??= _entityManager.System<SpriteSystem>();
+            var specifier = new SpriteSpecifier.Rsi(patch.Rsi, patch.State);
+            row.AddChild(new TextureRect
+            {
+                Texture = _spriteSystem.Frame0(specifier),
+                TextureScale = new Vector2(1.5f, 1.5f),
+                Stretch = TextureRect.StretchMode.KeepAspectCentered,
+                MinSize = new Vector2(32, 32),
+                VerticalAlignment = VAlignment.Center,
+            });
+        }
+    }
+
+    private static string GetRelationDisplayName(STFactionRelationType type)
+    {
+        return type switch
+        {
+            STFactionRelationType.Alliance => Loc.GetString("bands-managing-window-relation-alliance"),
+            STFactionRelationType.Neutral => Loc.GetString("bands-managing-window-relation-neutral"),
+            STFactionRelationType.Hostile => Loc.GetString("bands-managing-window-relation-hostile"),
+            STFactionRelationType.War => Loc.GetString("bands-managing-window-relation-war"),
+            _ => Loc.GetString("bands-managing-window-relation-neutral"),
+        };
+    }
+    protected override void FrameUpdate(FrameEventArgs args)
+    {
+        base.FrameUpdate(args);
+
+        List<string>? expired = null;
+        foreach (var (faction, expiry) in _cooldownExpiries)
+        {
+            var remaining = (expiry - _gameTiming.CurTime).TotalSeconds;
+            if (remaining <= 0)
+            {
+                expired ??= new();
+                expired.Add(faction);
+
+                if (_cooldownLabels.TryGetValue(faction, out var label))
+                    label.Visible = false;
+
+                if (_lastCanManage && _cooldownDropdowns.TryGetValue(faction, out var dd))
+                    dd.Disabled = false;
+            }
+            else if (_cooldownLabels.TryGetValue(faction, out var label))
+            {
+                label.Text = Loc.GetString("bands-managing-window-cooldown", ("seconds", (int) remaining));
+            }
+        }
+
+        if (expired != null)
+        {
+            foreach (var f in expired)
+            {
+                _cooldownExpiries.Remove(f);
+                _cooldownLabels.Remove(f);
+                _cooldownDropdowns.Remove(f);
+            }
         }
     }
     // stalker-en-changes end
