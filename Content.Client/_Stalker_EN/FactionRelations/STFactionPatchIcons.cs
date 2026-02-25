@@ -24,7 +24,7 @@ public static class STFactionPatchIcons
         ["Mercenaries"] = (PatchRsiPath, "merc"),
         ["Military"] = (PatchRsiPath, "army"),
         ["Monolith"] = (PatchRsiPath, "monolith"),
-        ["ClearSky"] = (PatchRsiPath, "cn"),
+        ["Clear Sky"] = (PatchRsiPath, "cn"),
         ["Renegades"] = (PatchRsiPath, "rene"),
         ["Rookies"] = (PatchRsiPathEN, "rookie"),
     };
