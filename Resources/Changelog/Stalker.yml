@@ -848,5 +848,15 @@
   id: 96
   time: '2026-02-25T18:58:43.493949+00:00'
   url: https://github.com/coolmankid12345/stalker-14-EN/pull/530
+- author: Roland410
+  changes:
+  - message: Lowered burer and controller damage, buffed their health instead.
+    type: Tweak
+  - message: Added brains to the burer and controller instead of rouble drop, and
+      adds it to vendors.
+    type: Add
+  id: 97
+  time: '2026-02-25T20:49:04.781919+00:00'
+  url: https://github.com/coolmankid12345/stalker-14-EN/pull/513
 Name: Stalker
 Order: -1
