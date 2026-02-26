@@ -88,7 +88,7 @@ public sealed class RitualChasmSystem : SharedRitualChasmSystem
         var accumulatedTime = TimeSpan.Zero;
 
         var rewardedEntityCount = GetArtifactReward(uid, ritualChasmEntity) + StealTeeth(uid, ritualChasmEntity);
-        for (; rewardedEntityCount != 0; --rewardedEntityCount)
+        for (; rewardedEntityCount != 0; rewardedEntityCount--)
         {
             var spawnedUid = Spawn(ritualChasmEntity.Comp.RewardedEntityProtoId);
             EnsureComp<DontStartCollideWithRitualChasmOnceComponent>(spawnedUid);
