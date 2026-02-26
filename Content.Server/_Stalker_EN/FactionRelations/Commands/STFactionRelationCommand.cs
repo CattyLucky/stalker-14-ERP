@@ -128,7 +128,7 @@ public sealed class STFactionRelationCommand : IConsoleCommand
     private static void HandleReset(IConsoleShell shell, STFactionRelationsCartridgeSystem system)
     {
         system.ResetAllRelations();
-        shell.WriteLine("All faction relation overrides and proposals cleared. Reverted to YAML defaults (all Neutral).");
+        shell.WriteLine("All faction relation overrides and proposals cleared. Reverted to YAML defaults.");
     }
 
     private void HandleProposals(IConsoleShell shell, string[] args, STFactionRelationsCartridgeSystem system)

@@ -1,5 +1,4 @@
 # Default faction relations matrix for the Zone.
-# All factions start Neutral with each other.
 # Relations are changed in-game through Igor NPCs or admin commands.
 # DB overrides persist across rounds.
 - type: stFactionRelationDefaults
@@ -39,6 +38,7 @@
   displayNames:
     ClearSky: Clear Sky
   relations:
+    # MONOLITH
     - { factionA: Monolith, factionB: Loners, relation: War }
     - { factionA: Monolith, factionB: Freedom, relation: War }
     - { factionA: Monolith, factionB: Bandits, relation: War }
@@ -48,3 +48,34 @@
     - { factionA: Monolith, factionB: Military, relation: War }
     - { factionA: Monolith, factionB: ClearSky, relation: War }
     - { factionA: Monolith, factionB: Renegades, relation: War }
+    # Loners relations
+    - { factionA: Loners, factionB: Bandits, relation: Hostile }
+    - { factionA: Loners, factionB: Renegades, relation: Hostile }
+    # Freedom relations
+    - { factionA: Freedom, factionB: Duty, relation: War }
+    - { factionA: Freedom, factionB: Renegades, relation: Hostile }
+    # Bandits relations
+    - { factionA: Bandits, factionB: Duty, relation: War }
+    - { factionA: Bandits, factionB: Ecologist, relation: Hostile }
+    - { factionA: Bandits, factionB: Military, relation: War }
+    - { factionA: Bandits, factionB: ClearSky, relation: War }
+    - { factionA: Bandits, factionB: Renegades, relation: Hostile }
+    # Duty relations
+    - { factionA: Duty, factionB: Ecologist, relation: Hostile }
+    - { factionA: Duty, factionB: Mercenaries, relation: Hostile }
+    - { factionA: Duty, factionB: Military, relation: Hostile }
+    - { factionA: Duty, factionB: ClearSky, relation: Hostile }
+    - { factionA: Duty, factionB: Renegades, relation: War }
+    # Ecologist relations
+    - { factionA: Ecologist, factionB: Mercenaries, relation: Hostile }
+    - { factionA: Ecologist, factionB: Military, relation: Alliance }
+    - { factionA: Ecologist, factionB: Renegades, relation: Hostile }
+    # Mercenaries relations
+    - { factionA: Mercenaries, factionB: Military, relation: Hostile }
+    - { factionA: Mercenaries, factionB: ClearSky, relation: Hostile }
+    - { factionA: Mercenaries, factionB: Renegades, relation: Hostile }
+    # Military relations
+    - { factionA: Military, factionB: ClearSky, relation: Hostile }
+    - { factionA: Military, factionB: Renegades, relation: War }
+    # ClearSky relations
+    - { factionA: ClearSky, factionB: Renegades, relation: War }
