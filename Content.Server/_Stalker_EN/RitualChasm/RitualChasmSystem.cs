@@ -84,7 +84,7 @@ public sealed class RitualChasmSystem : SharedRitualChasmSystem
     {
         var outDirection = -GetUnitVectorFrom(ritualChasmEntity.Owner, uid);
 
-        var initialTime = GameTiming.CurTime + FallTime;
+        var initialTime = GameTiming.CurTime + FallTime + TimeSpan.FromSeconds(0.5f); // ST14-EN: Arbitrary delay before the first throw back, can be tweaked later
         var accumulatedTime = TimeSpan.Zero;
 
         var rewardedEntityCount = GetArtifactReward(uid, ritualChasmEntity) + StealTeeth(uid, ritualChasmEntity);
