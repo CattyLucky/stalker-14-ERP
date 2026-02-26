@@ -1,7 +1,7 @@
 - type: entity
   id: FloorRitualChasmEntity
   name: chasm
-  description: It yearns for artifacts.
+  description: The darkness inside is blinding.
   suffix: Ritual Chasm, Renegade
   placement:
     mode: SnapgridCenter
