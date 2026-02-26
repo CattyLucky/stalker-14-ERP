@@ -866,5 +866,12 @@
   id: 98
   time: '2026-02-25T20:50:54.745082+00:00'
   url: https://github.com/coolmankid12345/stalker-14-EN/pull/533
+- author: RebelledCombine
+  changes:
+  - message: The Duty helmets from most tiers, I still have to do the Vityaz and penhelm
+    type: Tweak
+  id: 99
+  time: '2026-02-26T22:05:40.766041+00:00'
+  url: https://github.com/coolmankid12345/stalker-14-EN/pull/539
 Name: Stalker
 Order: -1
