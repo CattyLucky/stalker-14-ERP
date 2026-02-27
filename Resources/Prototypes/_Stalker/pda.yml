@@ -75,7 +75,7 @@
     uiKey: enum.PdaUiKey.Key
     preinstalled:
       - NotekeeperCartridge
-      - STMessangerCartridge
+      - STMessengerCartridge # stalker-en-changes: replaced upstream messenger
       - STFactionRelationsCartridge # stalker-en-changes
     cartridgeSlot:
       priority: -1
@@ -89,6 +89,7 @@
     key: enum.PdaUiKey.Key
     singleUser: true
     requireActiveHand: false
+  - type: STPdaPassword # stalker-en-changes: PDA password lock
   - type: UserInterface
     interfaces:
       enum.PdaUiKey.Key:
@@ -101,6 +102,8 @@
         type: InstrumentBoundUserInterface
       enum.HealthAnalyzerUiKey.Key:
         type: HealthAnalyzerBoundUserInterface
+      enum.STPdaPasswordUiKey.Key: # stalker-en-changes: PDA password lock
+        type: STPdaPasswordBui
   - type: Input
     context: "human"
   - type: StationRecordKeyStorage
