@@ -317,13 +317,19 @@ public sealed partial class STMessengerSystem : EntitySystem
         _nextMessageId.TryAdd(storageKey, 0);
         var msgId = ++_nextMessageId[storageKey];
 
+        // Resolve faction for non-anonymous channel messages; null hides faction on anonymous/DM messages
+        string? senderFaction = (!send.IsAnonymous && !isDm)
+            ? ResolveContactFaction(senderName)
+            : null;
+
         var message = new STMessengerMessage(
             msgId,
             displayName,
             content,
             _timing.CurTime,
             send.ReplyToId,
-            replySnippet);
+            replySnippet,
+            senderFaction);
 
         chatMessages.Add(message);
 
@@ -354,9 +360,9 @@ public sealed partial class STMessengerSystem : EntitySystem
                 && _cartridgeLoader.TryGetProgram<STMessengerServerComponent>(
                     recipientPdaUid, out _, out var recipientServer))
             {
-                var senderFaction = ResolveContactFaction(senderName);
-                if (recipientServer.Contacts.TryAdd(senderName, senderFaction))
-                    AddContactAsync(recipientServer.OwnerCharacterName, senderName, senderFaction);
+                var dmSenderFaction = ResolveContactFaction(senderName);
+                if (recipientServer.Contacts.TryAdd(senderName, dmSenderFaction))
+                    AddContactAsync(recipientServer.OwnerCharacterName, senderName, dmSenderFaction);
             }
 
             NotifyDmRecipient(contactName, server);

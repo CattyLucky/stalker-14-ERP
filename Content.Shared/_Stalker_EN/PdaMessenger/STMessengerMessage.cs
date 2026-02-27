@@ -39,13 +39,19 @@ public sealed class STMessengerMessage
     /// </summary>
     public readonly TimeSpan Timestamp;
 
+    /// <summary>
+    /// Faction name of the sender, if known and non-anonymous. Null for anonymous, DM, or unknown faction.
+    /// </summary>
+    public readonly string? SenderFaction;
+
     public STMessengerMessage(
         uint id,
         string sender,
         string content,
         TimeSpan timestamp,
         uint? replyToId = null,
-        string? replySnippet = null)
+        string? replySnippet = null,
+        string? senderFaction = null)
     {
         Id = id;
         Sender = sender;
@@ -53,5 +59,6 @@ public sealed class STMessengerMessage
         Timestamp = timestamp;
         ReplyToId = replyToId;
         ReplySnippet = replySnippet;
+        SenderFaction = senderFaction;
     }
 }
