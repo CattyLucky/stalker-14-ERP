@@ -873,5 +873,12 @@
   id: 99
   time: '2026-02-26T22:05:40.766041+00:00'
   url: https://github.com/coolmankid12345/stalker-14-EN/pull/539
+- author: Roland410
+  changes:
+  - message: Adds cells, lathe and workbench to Neutral base
+    type: Add
+  id: 100
+  time: '2026-02-27T22:41:47.672517+00:00'
+  url: https://github.com/coolmankid12345/stalker-14-EN/pull/544
 Name: Stalker
 Order: -1
