@@ -47,7 +47,7 @@ public sealed class STMessengerChat
     /// <summary>
     /// Messages — only populated for the chat the client is currently viewing. Empty for other chats.
     /// </summary>
-    public readonly IReadOnlyList<STMessengerMessage> Messages;
+    public readonly List<STMessengerMessage> Messages;
 
     public STMessengerChat(
         string id,
@@ -55,13 +55,13 @@ public sealed class STMessengerChat
         bool isDirect,
         int unreadCount,
         bool isMuted,
-        IReadOnlyList<STMessengerMessage>? messages = null)
+        List<STMessengerMessage>? messages = null)
     {
         Id = id;
         DisplayName = displayName;
         IsDirect = isDirect;
         UnreadCount = unreadCount;
         IsMuted = isMuted;
-        Messages = messages ?? Array.Empty<STMessengerMessage>();
+        Messages = messages ?? new List<STMessengerMessage>();
     }
 }
