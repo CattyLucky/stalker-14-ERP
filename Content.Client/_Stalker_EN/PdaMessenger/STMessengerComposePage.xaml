@@ -1,0 +1,55 @@
+<BoxContainer xmlns="https://spacestation14.io"
+              xmlns:msg="clr-namespace:Content.Client._Stalker_EN.PdaMessenger"
+              xmlns:graphics="clr-namespace:Robust.Client.Graphics;assembly=Robust.Client"
+              xmlns:customControls="clr-namespace:Content.Client.Administration.UI.CustomControls"
+              Orientation="Vertical"
+              HorizontalExpand="True"
+              VerticalExpand="True"
+              Margin="4">
+
+    <!-- Header -->
+    <BoxContainer Orientation="Horizontal" HorizontalExpand="True" Margin="0 0 0 4">
+        <Button Name="BackButton" Text="{Loc 'st-messenger-back-button'}" MinWidth="60"/>
+        <Label StyleClasses="LabelHeading" Text="{Loc 'st-messenger-compose-title'}" HorizontalExpand="True" Align="Center"/>
+    </BoxContainer>
+
+    <customControls:HSeparator Margin="0 2 0 2"/>
+
+    <!-- To label -->
+    <BoxContainer Orientation="Horizontal" Margin="0 4 0 4">
+        <Label Text="{Loc 'st-messenger-compose-to'}" StyleClasses="LabelKeyText" Margin="0 0 4 0"/>
+        <Label Name="RecipientLabel" StyleClasses="LabelSubText"/>
+    </BoxContainer>
+
+    <!-- Anonymous toggle (channels only) -->
+    <CheckBox Name="AnonymousToggle" Text="{Loc 'st-messenger-compose-anonymous'}" Margin="0 2 0 2"/>
+
+    <!-- Reply context (optional) -->
+    <PanelContainer Name="ReplyContext" Visible="False" Margin="0 0 0 4">
+        <PanelContainer.PanelOverride>
+            <graphics:StyleBoxFlat BackgroundColor="#333237"/>
+        </PanelContainer.PanelOverride>
+        <BoxContainer Orientation="Vertical" Margin="4">
+            <BoxContainer Orientation="Horizontal">
+                <Label Text="{Loc 'st-messenger-compose-replying-to'}" StyleClasses="LabelSubText" HorizontalExpand="True"/>
+                <Button Name="DismissReply" Text="X" MinWidth="24" MinHeight="24"/>
+            </BoxContainer>
+            <Label Name="ReplySnippetLabel" StyleClasses="LabelSubText" MaxWidth="300"/>
+        </BoxContainer>
+    </PanelContainer>
+
+    <!-- Content input -->
+    <PanelContainer VerticalExpand="True" HorizontalExpand="True" MinSize="0 60">
+        <PanelContainer.PanelOverride>
+            <graphics:StyleBoxFlat BackgroundColor="#333237"/>
+        </PanelContainer.PanelOverride>
+        <TextEdit Name="ContentInput" HorizontalExpand="True" VerticalExpand="True"/>
+    </PanelContainer>
+
+    <!-- Character counter -->
+    <Label Name="CharCounter" HorizontalAlignment="Right" Margin="0 2 0 0" StyleClasses="LabelSubText"/>
+
+    <!-- Send button -->
+    <Button Name="SendButton" Text="{Loc 'st-messenger-send-button'}" HorizontalExpand="True" Margin="0 4 0 0"/>
+
+</BoxContainer>

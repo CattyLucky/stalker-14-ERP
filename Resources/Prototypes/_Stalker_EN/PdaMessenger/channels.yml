@@ -1,0 +1,23 @@
+- type: stMessengerChannel
+  id: STGeneral
+  name: st-messenger-channel-general
+  color: "#AAAAAA"
+  sortOrder: 0
+
+- type: stMessengerChannel
+  id: STRookie
+  name: st-messenger-channel-rookie
+  color: "#88CC88"
+  sortOrder: 1
+
+- type: stMessengerChannel
+  id: STTrading
+  name: st-messenger-channel-trading
+  color: "#CCAA44"
+  sortOrder: 2
+
+- type: stMessengerChannel
+  id: STJobs
+  name: st-messenger-channel-jobs
+  color: "#4488CC"
+  sortOrder: 3

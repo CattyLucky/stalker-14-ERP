@@ -54,6 +54,9 @@ namespace Content.Server.Database
         public DbSet<StalkerZoneOwnership> StalkerZoneOwnerships { get; set; } = null!; // stalker-changes
         public DbSet<StalkerFactionRelation> StalkerFactionRelations { get; set; } = null!; // stalker-en-changes
         public DbSet<StalkerFactionRelationProposal> StalkerFactionRelationProposals { get; set; } = null!; // stalker-en-changes
+        public DbSet<StalkerMessengerId> StalkerMessengerIds { get; set; } = null!; // stalker-en-changes
+        public DbSet<StalkerMessengerContact> StalkerMessengerContacts { get; set; } = null!; // stalker-en-changes
+        public DbSet<StalkerPdaPassword> StalkerPdaPasswords { get; set; } = null!; // stalker-en-changes
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Preference>()
@@ -372,6 +375,19 @@ namespace Content.Server.Database
 
             modelBuilder.Entity<StalkerFactionRelationProposal>()
                 .HasKey(p => new { p.InitiatingFaction, p.TargetFaction });
+
+            modelBuilder.Entity<StalkerMessengerId>()
+                .HasKey(m => m.CharacterName);
+
+            modelBuilder.Entity<StalkerMessengerId>()
+                .HasIndex(m => m.MessengerId)
+                .IsUnique();
+
+            modelBuilder.Entity<StalkerMessengerContact>()
+                .HasKey(c => new { c.OwnerCharacterName, c.ContactCharacterName });
+
+            modelBuilder.Entity<StalkerPdaPassword>()
+                .HasKey(p => p.CharacterName);
             // stalker-en-changes-end
 
             // Changes for modern HWID integration
@@ -1551,6 +1567,53 @@ namespace Content.Server.Database
         /// </summary>
         [Required]
         public bool Broadcast { get; set; }
+    }
+    // stalker-en-changes-end
+
+    // stalker-en-changes-start: Messenger ID + Contact persistence
+    /// <summary>
+    /// Stores a persistent messenger ID for a character name.
+    /// Each character gets a unique "XXX-XXX" format ID that persists across rounds.
+    /// </summary>
+    public sealed class StalkerMessengerId
+    {
+        [Required, Key]
+        public string CharacterName { get; set; } = default!;
+
+        [Required]
+        public string MessengerId { get; set; } = default!;
+    }
+
+    /// <summary>
+    /// Stores a unidirectional contact relationship between two characters.
+    /// Composite key: (OwnerCharacterName, ContactCharacterName).
+    /// </summary>
+    public sealed class StalkerMessengerContact
+    {
+        [Required]
+        public string OwnerCharacterName { get; set; } = default!;
+
+        [Required]
+        public string ContactCharacterName { get; set; } = default!;
+
+        /// <summary>
+        /// Last-known faction name of the contact at time of add or last DM interaction.
+        /// Null if the contact was offline or had no faction when added.
+        /// </summary>
+        public string? FactionName { get; set; } // stalker-en-changes
+    }
+
+    /// <summary>
+    /// Stores a persistent PDA password for a character name.
+    /// Survives entity deletion (e.g. personal stash store/retrieve).
+    /// </summary>
+    public sealed class StalkerPdaPassword
+    {
+        [Required, Key]
+        public string CharacterName { get; set; } = default!;
+
+        [Required]
+        public string Password { get; set; } = default!;
     }
     // stalker-en-changes-end
 

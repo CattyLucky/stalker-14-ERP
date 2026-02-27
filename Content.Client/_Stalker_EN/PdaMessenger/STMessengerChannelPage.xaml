@@ -1,0 +1,28 @@
+<BoxContainer xmlns="https://spacestation14.io"
+              xmlns:msg="clr-namespace:Content.Client._Stalker_EN.PdaMessenger"
+              xmlns:graphics="clr-namespace:Robust.Client.Graphics;assembly=Robust.Client"
+              xmlns:customControls="clr-namespace:Content.Client.Administration.UI.CustomControls"
+              Orientation="Vertical"
+              HorizontalExpand="True"
+              VerticalExpand="True"
+              Margin="4">
+
+    <!-- Header -->
+    <BoxContainer Orientation="Horizontal" HorizontalExpand="True" Margin="0 0 0 4">
+        <Button Name="BackButton" Text="{Loc 'st-messenger-back-button'}" MinWidth="60"/>
+        <Label Name="ChatTitle" StyleClasses="LabelHeading" HorizontalExpand="True" Align="Center"/>
+    </BoxContainer>
+
+    <customControls:HSeparator Margin="0 2 0 2"/>
+
+    <!-- Messages -->
+    <ScrollContainer Name="MessageScroll" VerticalExpand="True" HScrollEnabled="False">
+        <BoxContainer Name="MessageList" Orientation="Vertical" HorizontalExpand="True"/>
+    </ScrollContainer>
+
+    <customControls:HSeparator Margin="0 2 0 2"/>
+
+    <!-- New Message button -->
+    <Button Name="ComposeButton" Text="{Loc 'st-messenger-new-message-button'}" HorizontalExpand="True" Margin="0 4 0 0"/>
+
+</BoxContainer>

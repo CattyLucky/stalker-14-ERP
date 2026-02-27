@@ -1,4 +1,5 @@
 using Content.Client.CartridgeLoader;
+using Content.Shared._Stalker_EN.PDA;
 using Content.Shared._Stalker_EN.PDA.Ringer;
 using Content.Shared.CartridgeLoader;
 using Content.Shared.Containers.ItemSlots;
@@ -76,6 +77,12 @@ namespace Content.Client.PDA
             _menu.LockUplinkButton.OnPressed += _ =>
             {
                 SendMessage(new PdaLockUplinkMessage());
+            };
+
+            // stalker-en-changes: PDA password settings
+            _menu.SetPasswordButton.OnPressed += _ =>
+            {
+                SendMessage(new STPdaPasswordOpenSettingsMessage());
             };
 
             _menu.OnProgramItemPressed += ActivateCartridge;

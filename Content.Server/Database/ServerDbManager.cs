@@ -410,6 +410,22 @@ namespace Content.Server.Database
         Task SetStalkerFactionRelationProposalAsync(string initiatingFaction, string targetFaction, int proposedRelationType, string? customMessage, bool broadcast);
         Task DeleteStalkerFactionRelationProposalAsync(string initiatingFaction, string targetFaction);
         Task ClearAllStalkerFactionRelationProposalsAsync();
+
+        // stalker-en-changes: Messenger ID + Contact persistence
+        Task<List<StalkerMessengerId>> GetAllStalkerMessengerIdsAsync();
+        Task<StalkerMessengerId?> GetStalkerMessengerIdAsync(string characterName);
+        Task<StalkerMessengerId?> GetStalkerMessengerIdByIdAsync(string messengerId);
+        Task SetStalkerMessengerIdAsync(string characterName, string messengerId);
+        Task<List<StalkerMessengerContact>> GetStalkerMessengerContactsAsync(string ownerName);
+        // stalker-en-changes
+        Task AddStalkerMessengerContactAsync(string ownerName, string contactName, string? factionName = null);
+        Task RemoveStalkerMessengerContactAsync(string ownerName, string contactName);
+        Task UpdateStalkerMessengerContactFactionAsync(string ownerName, string contactName, string factionName);
+
+        // stalker-en-changes: PDA password persistence
+        Task<StalkerPdaPassword?> GetStalkerPdaPasswordAsync(string characterName);
+        Task SetStalkerPdaPasswordAsync(string characterName, string password);
+        Task RemoveStalkerPdaPasswordAsync(string characterName);
         #endregion
     }
     /// <summary>
@@ -1198,6 +1214,75 @@ namespace Content.Server.Database
         {
             DbWriteOpsMetric.Inc();
             return RunDbCommand(() => _db.ClearAllStalkerFactionRelationProposalsAsync());
+        }
+
+        // stalker-en-changes: Messenger ID + Contact persistence
+        public Task<List<StalkerMessengerId>> GetAllStalkerMessengerIdsAsync()
+        {
+            DbReadOpsMetric.Inc();
+            return RunDbCommand(() => _db.GetAllStalkerMessengerIdsAsync());
+        }
+
+        public Task<StalkerMessengerId?> GetStalkerMessengerIdAsync(string characterName)
+        {
+            DbReadOpsMetric.Inc();
+            return RunDbCommand(() => _db.GetStalkerMessengerIdAsync(characterName));
+        }
+
+        public Task<StalkerMessengerId?> GetStalkerMessengerIdByIdAsync(string messengerId)
+        {
+            DbReadOpsMetric.Inc();
+            return RunDbCommand(() => _db.GetStalkerMessengerIdByIdAsync(messengerId));
+        }
+
+        public Task SetStalkerMessengerIdAsync(string characterName, string messengerId)
+        {
+            DbWriteOpsMetric.Inc();
+            return RunDbCommand(() => _db.SetStalkerMessengerIdAsync(characterName, messengerId));
+        }
+
+        public Task<List<StalkerMessengerContact>> GetStalkerMessengerContactsAsync(string ownerName)
+        {
+            DbReadOpsMetric.Inc();
+            return RunDbCommand(() => _db.GetStalkerMessengerContactsAsync(ownerName));
+        }
+
+        public Task AddStalkerMessengerContactAsync(string ownerName, string contactName, string? factionName = null)
+        {
+            DbWriteOpsMetric.Inc();
+            return RunDbCommand(() => _db.AddStalkerMessengerContactAsync(ownerName, contactName, factionName));
+        }
+
+        // stalker-en-changes
+        public Task UpdateStalkerMessengerContactFactionAsync(string ownerName, string contactName, string factionName)
+        {
+            DbWriteOpsMetric.Inc();
+            return RunDbCommand(() => _db.UpdateStalkerMessengerContactFactionAsync(ownerName, contactName, factionName));
+        }
+
+        public Task RemoveStalkerMessengerContactAsync(string ownerName, string contactName)
+        {
+            DbWriteOpsMetric.Inc();
+            return RunDbCommand(() => _db.RemoveStalkerMessengerContactAsync(ownerName, contactName));
+        }
+
+        // stalker-en-changes: PDA password persistence
+        public Task<StalkerPdaPassword?> GetStalkerPdaPasswordAsync(string characterName)
+        {
+            DbReadOpsMetric.Inc();
+            return RunDbCommand(() => _db.GetStalkerPdaPasswordAsync(characterName));
+        }
+
+        public Task SetStalkerPdaPasswordAsync(string characterName, string password)
+        {
+            DbWriteOpsMetric.Inc();
+            return RunDbCommand(() => _db.SetStalkerPdaPasswordAsync(characterName, password));
+        }
+
+        public Task RemoveStalkerPdaPasswordAsync(string characterName)
+        {
+            DbWriteOpsMetric.Inc();
+            return RunDbCommand(() => _db.RemoveStalkerPdaPasswordAsync(characterName));
         }
 
         public Task SetStalkerBandAsync(ProtoId<STBandPrototype> band, float rewardPoints)
