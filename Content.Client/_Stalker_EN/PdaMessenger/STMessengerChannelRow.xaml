@@ -1,0 +1,15 @@
+<BoxContainer xmlns="https://spacestation14.io"
+              xmlns:msg="clr-namespace:Content.Client._Stalker_EN.PdaMessenger"
+              Orientation="Horizontal"
+              HorizontalExpand="True"
+              Margin="0 1 0 1">
+
+    <Button Name="SelectButton" HorizontalExpand="True" MinHeight="28">
+        <BoxContainer Orientation="Horizontal" HorizontalExpand="True">
+            <Label Name="ChannelNameLabel" HorizontalExpand="True"/>
+            <Label Name="UnreadLabel" StyleClasses="LabelSubText" Margin="4 0 0 0"/>
+        </BoxContainer>
+    </Button>
+    <Button Name="MuteButton" MinWidth="50" MinHeight="28" Margin="2 0 0 0"/>
+
+</BoxContainer>
