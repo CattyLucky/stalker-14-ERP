@@ -95,6 +95,9 @@
       interactSuccessSound:
         path: /Audio/Animals/pig_oink.ogg
     # Stalker-EN start
+    - type: Tag # ST14-EN: Ritual chasm
+      tags:
+      - STFleshRelated
     - type: STMobVariantConfig
       variants:
       - chance: 0.08
@@ -230,6 +233,9 @@
       interactSuccessSound:
         path: /Audio/Animals/pig_oink.ogg
     # Stalker-EN start
+    - type: Tag # ST14-EN: Ritual chasm
+      tags:
+      - STFleshRelated
     - type: STMobVariantConfig
       variants:
       - chance: 0.08

@@ -1,0 +1,93 @@
+- type: entity
+  id: FloorRitualChasmEntity
+  name: chasm
+  description: The darkness inside is blinding.
+  suffix: Ritual Chasm, Renegade
+  placement:
+    mode: SnapgridCenter
+    snap:
+    - Wall
+  components:
+  # Chasm
+  - type: RitualChasm
+    throwSound: /Audio/_Stalker/Effects/springboard_blowout.ogg
+    relocateSound:
+      params:
+        volume: -4
+      collection: StalkerHorrorSound
+    relocatedLocalSound:
+      params:
+        volume: 8
+        pitch: 0.7
+      path: /Audio/_Stalker_EN/Effects/psivoice3.ogg #/Audio/Effects/Gasp/gasp_male2.ogg
+    fallSound:
+      params:
+        volume: 6
+      path: /Audio/_Stalker_EN/Effects/fall_impact.ogg
+    fallEmote: Scream
+    relocatedLocalPopup: ritual-chasm-relocated-popup
+    relocatedStunDuration: 10
+    relocatedFlashDuration: 10
+    throwForce: 15
+    rewardedPerTier: 1.65
+    rewardedPerTooth: 1.75
+    relocatableEntities:
+      components:
+      - Body
+    punishedEntities:
+      tags:
+      - STFleshRelated
+
+  # Sprites
+  - type: Sprite
+    sprite: Tiles/Planet/Chasms/basalt_chasm.rsi
+    drawdepth: BelowFloor
+    layers:
+    - state: chasm
+  - type: Icon
+    sprite: Tiles/Planet/Chasms/basalt_chasm.rsi
+    state: full
+  - type: IconSmooth
+    key: chasm
+    additionalKeys:
+    - walls
+    base: chasm
+
+  # Physics
+  - type: Transform
+    anchored: true
+  - type: Physics
+    bodyType: Static
+  - type: Fixtures
+    fixtures:
+      fix1:
+        shape:
+          !type:PhysShapeAabb
+          bounds: "-0.5,-0.5,0.5,0.5"
+        layer:
+        - WallLayer
+        mask:
+        - ItemMask
+        density: 1000
+        hard: false
+
+  # Other
+  - type: Clickable
+  - type: Tag
+    tags:
+    - HideContextMenu
+
+- type: entity
+  parent: MarkerBase
+  id: RitualChasmExitPointMarker
+  name: ritual-chasm exit point marker
+  description: Some things dropped into a ritual chasm spared by it may end up here.
+  components:
+  - type: Sprite
+    layers:
+    - state: blue
+    - sprite: Tiles/Planet/Chasms/basalt_chasm.rsi
+      state: full
+      color: '#FFFFFFC8'
+      rotation: 45
+  - type: RitualChasmExitPoint

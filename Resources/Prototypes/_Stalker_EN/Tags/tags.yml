@@ -50,3 +50,7 @@
 
 - type: Tag
   id: STElasticRubberBlue
+
+# For ritual chasm, this is stuff related to the flesh mutant
+- type: Tag
+  id: STFleshRelated

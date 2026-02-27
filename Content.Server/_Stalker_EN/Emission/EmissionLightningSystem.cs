@@ -274,21 +274,29 @@ public sealed class EmissionLightningSystem : EntitySystem
     }
 
     // Lightning can only hit if target is: 1. not in safezone, 2. is an emission target
-    private bool LightningHitPredicate(in EntityUid uid) => _emissionTargetQuery.HasComponent(uid) && !_safeZoneQuery.HasComponent(uid);
+    public bool LightningTargetAndSafePredicate(in EntityUid uid) => LightningTargetPredicate(uid) && !_safeZoneQuery.HasComponent(uid);
+
+    // Lightning can only hit if target is: an emission target
+    public bool LightningTargetPredicate(in EntityUid uid) => _emissionTargetQuery.HasComponent(uid);
 
     public void TrySpawnLightningNearby(EntityUid targetUid, float maximumSpawnRadius, EntProtoId emissionLightningEntityId, float boltRange, int boltCount, float minimumSpawnRadius = 0f)
     {
         if (!TryGetSpawnedLightningMapCoordinates(targetUid, maximumSpawnRadius, out var lightningMapCoordinates, minimumSpawnRadius: minimumSpawnRadius))
             return;
 
-        var lightningEntityId = Spawn(emissionLightningEntityId, lightningMapCoordinates.Value);
+        SpawnLightningImmediately(emissionLightningEntityId, lightningMapCoordinates.Value, LightningTargetAndSafePredicate, boltRange, boltCount);
+    }
+
+    public void SpawnLightningImmediately(EntProtoId emissionLightningEntityId, MapCoordinates coordinates, RandomLightningTargetPredicate predicate, float boltRange = 3f, int boltCount = 3)
+    {
+        var lightningEntityId = Spawn(emissionLightningEntityId, coordinates);
         _lightningSystem.ShootRandomLightnings(
             lightningEntityId,
             boltRange,
             boltCount,
             lightningPrototype: "EmissionLightningBolt",
             triggerLightningEvents: false,
-            predicate: LightningHitPredicate
+            predicate: predicate
         );
     }
 }

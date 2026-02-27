@@ -105,6 +105,9 @@
   id: MutantPartFleshEye
   name: flesh eye
   components:
+    - type: Tag # ST14-EN: Ritual chasm
+      tags:
+      - STFleshRelated
     - type: STWeight
       self: 1.75
     - type: Sprite
