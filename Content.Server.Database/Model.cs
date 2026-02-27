@@ -1595,6 +1595,12 @@ namespace Content.Server.Database
 
         [Required]
         public string ContactCharacterName { get; set; } = default!;
+
+        /// <summary>
+        /// Last-known faction name of the contact at time of add or last DM interaction.
+        /// Null if the contact was offline or had no faction when added.
+        /// </summary>
+        public string? FactionName { get; set; } // stalker-en-changes
     }
 
     /// <summary>

@@ -4,7 +4,9 @@ using Content.Server.Database;
 using Content.Server.Discord;
 using Content.Server.PDA;
 using Content.Server.PDA.Ringer;
+using Content.Shared._Stalker.Bands;
 using Content.Shared._Stalker_EN.CCVar;
+using Content.Shared._Stalker_EN.FactionRelations;
 using Content.Shared._Stalker_EN.PdaMessenger;
 using Content.Shared.CartridgeLoader;
 using Content.Shared.Database;
@@ -39,6 +41,7 @@ public sealed partial class STMessengerSystem : EntitySystem
     [Dependency] private readonly PdaSystem _pda = default!;
     [Dependency] private readonly IRobustRandom _random = default!;
     [Dependency] private readonly RingerSystem _ringer = default!;
+    [Dependency] private readonly SharedSTFactionResolutionSystem _factionResolution = default!;
 
     private const int MaxChannelMessages = 200;
     private const int MaxDmMessages = 100;
@@ -59,16 +62,9 @@ public sealed partial class STMessengerSystem : EntitySystem
     private readonly HashSet<string> _usedPseudonyms = new();
 
     /// <summary>
-    /// Lore-friendly callsign pool for anonymous channel messages.
-    /// Hardcoded English — these are Zone callsigns, not translatable UI strings (EN-fork only).
+    /// Fixed anonymous display name for channel messages (EN-fork only).
     /// </summary>
-    private static readonly string[] AnonymousNames =
-    {
-        "Shadow", "Phantom", "Wanderer", "Ghost", "Nomad",
-        "Spectre", "Drifter", "Raven", "Stray", "Whisper",
-        "Jackal", "Viper", "Crow", "Haze", "Ember",
-        "Frost", "Ash", "Lynx", "Bolt", "Thorn",
-    };
+    private const string AnonymousName = "Stalker";
 
     /// <summary>
     /// PDAs with messenger cartridge currently active (UI open). Receive broadcast updates.
@@ -290,8 +286,18 @@ public sealed partial class STMessengerSystem : EntitySystem
             var contactName = chatId[STMessengerChat.DmChatPrefix.Length..];
 
             // Only allow DMs to contacts (prevents unbounded DM chat creation)
-            if (!server.Contacts.Contains(contactName))
+            if (!server.Contacts.ContainsKey(contactName))
                 return;
+
+            // Check if contact's faction changed (only update with non-null — preserve last-known on resolution failure)
+            var currentFaction = ResolveContactFaction(contactName);
+            if (currentFaction is not null
+                && server.Contacts.TryGetValue(contactName, out var storedFaction)
+                && currentFaction != storedFaction)
+            {
+                server.Contacts[contactName] = currentFaction;
+                UpdateContactFactionAsync(server.OwnerCharacterName, contactName, currentFaction);
+            }
 
             storageKey = NormalizeDmKey(senderName, contactName);
             chatMessages = _dmChats.GetOrNew(storageKey);
@@ -346,10 +352,11 @@ public sealed partial class STMessengerSystem : EntitySystem
             var contactName = chatId[STMessengerChat.DmChatPrefix.Length..];
             if (_characterToPda.TryGetValue(contactName, out var recipientPdaUid)
                 && _cartridgeLoader.TryGetProgram<STMessengerServerComponent>(
-                    recipientPdaUid, out _, out var recipientServer)
-                && recipientServer.Contacts.Add(senderName))
+                    recipientPdaUid, out _, out var recipientServer))
             {
-                AddContactAsync(recipientServer.OwnerCharacterName, senderName);
+                var senderFaction = ResolveContactFaction(senderName);
+                if (recipientServer.Contacts.TryAdd(senderName, senderFaction))
+                    AddContactAsync(recipientServer.OwnerCharacterName, senderName, senderFaction);
             }
 
             NotifyDmRecipient(contactName, server);
@@ -450,10 +457,11 @@ public sealed partial class STMessengerSystem : EntitySystem
         if (server.Contacts.Count >= MaxContacts)
             return;
 
-        if (!server.Contacts.Add(contactName))
+        var factionName = ResolveContactFaction(contactName);
+        if (!server.Contacts.TryAdd(contactName, factionName))
             return;
 
-        AddContactAsync(server.OwnerCharacterName, contactName);
+        AddContactAsync(server.OwnerCharacterName, contactName, factionName);
 
         BroadcastUiUpdate();
     }
@@ -570,7 +578,7 @@ public sealed partial class STMessengerSystem : EntitySystem
         }
 
         var directMessages = new List<STMessengerChat>(server.Contacts.Count);
-        foreach (var contactName in server.Contacts)
+        foreach (var contactName in server.Contacts.Keys)
         {
             var dmKey = NormalizeDmKey(server.OwnerCharacterName, contactName);
             var dmChatId = STMessengerChat.DmChatPrefix + contactName;
@@ -591,11 +599,12 @@ public sealed partial class STMessengerSystem : EntitySystem
         }
 
         var contactInfos = new List<STMessengerContactInfo>();
-        foreach (var contactName in server.Contacts)
+        foreach (var (contactName, factionName) in server.Contacts)
         {
             contactInfos.Add(new STMessengerContactInfo(
                 contactName,
-                _characterToMessengerId.GetValueOrDefault(contactName)));
+                _characterToMessengerId.GetValueOrDefault(contactName),
+                factionName));
         }
 
         return new STMessengerUiState(
@@ -772,6 +781,33 @@ public sealed partial class STMessengerSystem : EntitySystem
 
     #region Helpers
 
+    /// <summary>
+    /// Resolves the current faction of an online contact by looking up their PDA holder's BandsComponent.
+    /// Returns null if the contact is offline, PDA is not equipped, or has no faction.
+    /// Only works when the PDA is in an inventory slot (ParentUid = mob entity).
+    /// </summary>
+    private string? ResolveContactFaction(string contactName)
+    {
+        if (!_characterToPda.TryGetValue(contactName, out var pdaUid))
+            return null;
+
+        if (!TryComp<TransformComponent>(pdaUid, out var xform))
+            return null;
+
+        // PDA in inventory: ParentUid is the mob. If PDA is dropped/in container, this won't be a mob.
+        var holder = xform.ParentUid;
+        if (!TryComp<BandsComponent>(holder, out var bands))
+            return null;
+
+        if (bands.BandProto is not { } bandProtoId)
+            return null;
+
+        if (!_protoManager.TryIndex(bandProtoId, out var bandProto))
+            return null;
+
+        return _factionResolution.GetBandFactionName(bandProto.Name);
+    }
+
     private void CacheSortedChannels()
     {
         _sortedChannels = new List<STMessengerChannelPrototype>(
@@ -797,9 +833,8 @@ public sealed partial class STMessengerSystem : EntitySystem
 
         for (var attempt = 0; attempt < MaxRetryCollision; attempt++)
         {
-            var name = _random.Pick(AnonymousNames);
             var suffix = _random.Next(1, MaxPseudonymSuffix + 1);
-            var pseudonym = $"{name}-{suffix}";
+            var pseudonym = $"{AnonymousName}-{suffix}";
 
             if (_usedPseudonyms.Contains(pseudonym))
                 continue;
@@ -809,9 +844,9 @@ public sealed partial class STMessengerSystem : EntitySystem
             return pseudonym;
         }
 
-        // Fallback: use name + charName hash; bitwise AND avoids OverflowException on int.MinValue
+        // Fallback: use charName hash; bitwise AND avoids OverflowException on int.MinValue
         var hashSuffix = (charName.GetHashCode() & 0x7FFFFFFF) % (MaxPseudonymSuffix + 1);
-        var fallback = $"{_random.Pick(AnonymousNames)}-{hashSuffix}";
+        var fallback = $"{AnonymousName}-{hashSuffix}";
 
         while (_usedPseudonyms.Contains(fallback))
             fallback += "X";

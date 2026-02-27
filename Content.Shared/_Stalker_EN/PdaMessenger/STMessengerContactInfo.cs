@@ -18,9 +18,15 @@ public sealed class STMessengerContactInfo
     /// </summary>
     public readonly string? MessengerId;
 
-    public STMessengerContactInfo(string characterName, string? messengerId)
+    /// <summary>
+    /// The contact's last-known faction name, or null if unknown.
+    /// </summary>
+    public readonly string? FactionName;
+
+    public STMessengerContactInfo(string characterName, string? messengerId, string? factionName)
     {
         CharacterName = characterName;
         MessengerId = messengerId;
+        FactionName = factionName;
     }
 }

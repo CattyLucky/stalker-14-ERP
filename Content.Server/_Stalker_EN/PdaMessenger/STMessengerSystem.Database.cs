@@ -121,7 +121,7 @@ public sealed partial class STMessengerSystem
 
             foreach (var contact in contacts)
             {
-                server.Contacts.Add(contact.ContactCharacterName);
+                server.Contacts[contact.ContactCharacterName] = contact.FactionName;
             }
 
             Log.Debug($"Loaded {contacts.Count} contacts for {characterName}.");
@@ -135,15 +135,30 @@ public sealed partial class STMessengerSystem
     /// <summary>
     /// Persists a new contact to the database.
     /// </summary>
-    private async void AddContactAsync(string ownerName, string contactName)
+    private async void AddContactAsync(string ownerName, string contactName, string? factionName)
     {
         try
         {
-            await _db.AddStalkerMessengerContactAsync(ownerName, contactName);
+            await _db.AddStalkerMessengerContactAsync(ownerName, contactName, factionName);
         }
         catch (Exception ex)
         {
             Log.Error($"Failed to persist contact {contactName} for {ownerName}: {ex}");
+        }
+    }
+
+    /// <summary>
+    /// Persists an updated faction name for an existing contact.
+    /// </summary>
+    private async void UpdateContactFactionAsync(string ownerName, string contactName, string factionName)
+    {
+        try
+        {
+            await _db.UpdateStalkerMessengerContactFactionAsync(ownerName, contactName, factionName);
+        }
+        catch (Exception ex)
+        {
+            Log.Error($"Failed to update faction for contact {contactName} of {ownerName}: {ex}");
         }
     }
 

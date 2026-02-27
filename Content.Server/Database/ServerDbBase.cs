@@ -2219,7 +2219,8 @@ INSERT INTO player_round (players_id, rounds_id) VALUES ({players[player]}, {id}
                 .ToListAsync();
         }
 
-        public async Task AddStalkerMessengerContactAsync(string ownerName, string contactName)
+        // stalker-en-changes
+        public async Task AddStalkerMessengerContactAsync(string ownerName, string contactName, string? factionName = null)
         {
             await using var db = await GetDb();
 
@@ -2232,7 +2233,23 @@ INSERT INTO player_round (players_id, rounds_id) VALUES ({players[player]}, {id}
                 {
                     OwnerCharacterName = ownerName,
                     ContactCharacterName = contactName,
+                    FactionName = factionName,
                 });
+                await db.DbContext.SaveChangesAsync();
+            }
+        }
+
+        // stalker-en-changes
+        public async Task UpdateStalkerMessengerContactFactionAsync(string ownerName, string contactName, string factionName)
+        {
+            await using var db = await GetDb();
+
+            var record = await db.DbContext.StalkerMessengerContacts
+                .FirstOrDefaultAsync(c => c.OwnerCharacterName == ownerName && c.ContactCharacterName == contactName);
+
+            if (record != null)
+            {
+                record.FactionName = factionName;
                 await db.DbContext.SaveChangesAsync();
             }
         }

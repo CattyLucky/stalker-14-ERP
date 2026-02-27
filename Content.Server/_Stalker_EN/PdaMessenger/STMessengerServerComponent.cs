@@ -29,10 +29,11 @@ public sealed partial class STMessengerServerComponent : Component
     public string OwnerCharacterName = string.Empty;
 
     /// <summary>
-    /// Contacts loaded from DB for this character (character names).
+    /// Contacts loaded from DB for this character.
+    /// Key = contact character name, Value = last-known faction name (null if unknown).
     /// </summary>
     [ViewVariables]
-    public HashSet<string> Contacts = new();
+    public Dictionary<string, string?> Contacts = new();
 
     /// <summary>
     /// Channels the player has muted (suppresses ringer notification).

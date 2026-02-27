@@ -6,6 +6,7 @@
 
     <Button Name="SelectButton" HorizontalExpand="True" MinHeight="28">
         <BoxContainer Orientation="Horizontal" HorizontalExpand="True">
+            <TextureRect Name="FactionIcon" MinSize="20 20" Stretch="KeepAspectCentered" Margin="0 0 4 0" Visible="False"/>
             <Label Name="ContactNameLabel"/>
             <Label Name="PdaIdLabel" StyleClasses="LabelSubText" Margin="4 0 0 0"/>
             <Control HorizontalExpand="True"/>

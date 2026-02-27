@@ -1492,6 +1492,10 @@ namespace Content.Server.Database.Migrations.Postgres
                         .HasColumnType("text")
                         .HasColumnName("contact_character_name");
 
+                    b.Property<string>("FactionName")
+                        .HasColumnType("text")
+                        .HasColumnName("faction_name");
+
                     b.HasKey("OwnerCharacterName", "ContactCharacterName")
                         .HasName("PK_stalker_messenger_contacts");
 
