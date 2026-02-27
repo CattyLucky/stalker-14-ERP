@@ -187,6 +187,8 @@ public sealed class RadioDeviceSystem : SharedRadioDeviceSystem
         if (args.Channel.ID == "StalkerInternal" && TryComp<RadioStalkerComponent>(uid, out var receiverStalkerComp) && receiverStalkerComp.CurrentFrequency != null)
         {
             // Frequencies matched in OnStalkerReceiveAttempt.
+            var nameEv = new TransformSpeakerNameEvent(args.MessageSource, MetaData(args.MessageSource).EntityName);
+            RaiseLocalEvent(args.MessageSource, nameEv);
             var speechVerb = _chat.GetSpeechVerb(args.MessageSource, args.Message);
             var wrappedMessage = Loc.GetString("chat-radio-message-wrap",
                 ("channel", string.Empty), // receiverStalkerComp.CurrentFrequency
@@ -194,7 +196,7 @@ public sealed class RadioDeviceSystem : SharedRadioDeviceSystem
                 ("fontSize", speechVerb.FontSize),
                 ("verb", string.Empty), // Loc.GetString(speechVerb.ID)
                 ("color", args.Channel.Color),
-                ("name", Name(args.MessageSource)),
+                ("name", nameEv.VoiceName),
                 ("message", args.Message));
 
             _chat.TrySendInGameICMessage(uid, wrappedMessage, InGameICChatType.Whisper, ChatTransmitRange.GhostRangeLimit, checkRadioPrefix: false);
