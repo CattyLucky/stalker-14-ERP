@@ -4,7 +4,6 @@ using Content.Server.Database;
 using Content.Server.Discord;
 using Content.Server.PDA;
 using Content.Server.PDA.Ringer;
-using Content.Shared._Stalker.Bands;
 using Content.Shared._Stalker_EN.CCVar;
 using Content.Shared._Stalker_EN.PdaMessenger;
 using Content.Shared.CartridgeLoader;
@@ -14,7 +13,6 @@ using Content.Shared.Inventory;
 using Content.Shared.Inventory.Events;
 using Content.Shared.PDA;
 using Content.Shared.PDA.Ringer;
-using Content.Shared.StatusIcon;
 using Robust.Shared.Configuration;
 using Robust.Shared.Prototypes;
 using Robust.Shared.Random;
@@ -110,14 +108,6 @@ public sealed partial class STMessengerSystem : EntitySystem
     private readonly Dictionary<string, EntityUid> _characterToPda = new();
 
     /// <summary>
-    /// Maps character name -> band status icon RSI state (e.g. "dolg", "stalker").
-    /// Populated on player spawn from <see cref="BandsComponent.BandStatusIcon"/>.
-    /// Persists across rounds (like <see cref="_characterToMessengerId"/>) so contacts
-    /// from previous rounds still display faction patches. Updated when a player spawns again.
-    /// </summary>
-    private readonly Dictionary<string, string> _characterToBandIcon = new();
-
-    /// <summary>
     /// Reverse lookup: character name -> messenger ID ("XXX-XXX").
     /// Populated alongside <see cref="_messengerIdCache"/> and persists across rounds.
     /// </summary>
@@ -209,8 +199,6 @@ public sealed partial class STMessengerSystem : EntitySystem
 
             if (_characterToPda.TryGetValue(name, out var existing) && existing == ent.Owner)
                 _characterToPda.Remove(name);
-
-            _characterToBandIcon.Remove(name);
         }
 
         // The loader is the PDA entity that owns this cartridge
@@ -607,8 +595,7 @@ public sealed partial class STMessengerSystem : EntitySystem
         {
             contactInfos.Add(new STMessengerContactInfo(
                 contactName,
-                _characterToMessengerId.GetValueOrDefault(contactName),
-                _characterToBandIcon.GetValueOrDefault(contactName)));
+                _characterToMessengerId.GetValueOrDefault(contactName)));
         }
 
         return new STMessengerUiState(
@@ -691,7 +678,7 @@ public sealed partial class STMessengerSystem : EntitySystem
             return;
 
         var charName = MetaData(args.Equipee).EntityName;
-        InitializeMessengerForPda(ent.Owner, progUid.Value, server, charName, args.Equipee);
+        InitializeMessengerForPda(ent.Owner, progUid.Value, server, charName);
     }
 
     private void OnPlayerSpawned(PlayerSpawnCompleteEvent args)
@@ -714,7 +701,7 @@ public sealed partial class STMessengerSystem : EntitySystem
             return;
 
         var charName = args.Profile.Name;
-        InitializeMessengerForPda(idEntity.Value, progUid.Value, server, charName, args.Mob);
+        InitializeMessengerForPda(idEntity.Value, progUid.Value, server, charName);
     }
 
     /// <summary>
@@ -726,26 +713,12 @@ public sealed partial class STMessengerSystem : EntitySystem
         EntityUid pdaUid,
         EntityUid cartridgeUid,
         STMessengerServerComponent server,
-        string charName,
-        EntityUid mobUid)
+        string charName)
     {
         server.OwnerCharacterName = charName;
 
         _characterToPda[charName] = pdaUid;
         _messengerPdas[pdaUid] = (cartridgeUid, pdaUid);
-
-        // Resolve the JobIconPrototype to get the actual RSI state name,
-        // since BandStatusIcon is a prototype ID that may differ from the RSI state
-        // (e.g. "seraphim" prototype → "seraph" RSI state).
-        if (TryComp<BandsComponent>(mobUid, out var bands)
-            && _protoManager.TryIndex<JobIconPrototype>(bands.BandStatusIcon, out var jobIcon)
-            && jobIcon.Icon is SpriteSpecifier.Rsi rsi)
-        {
-            _characterToBandIcon[charName] = rsi.RsiState;
-
-            // Refresh open messenger UIs so other players see this player's faction icon immediately
-            BroadcastUiUpdate();
-        }
 
         LoadOrGenerateMessengerIdAsync(cartridgeUid, charName);
         LoadContactsAsync(cartridgeUid, charName);
@@ -763,8 +736,6 @@ public sealed partial class STMessengerSystem : EntitySystem
         _dmChats.Clear();
         _nextMessageId.Clear();
         _characterToPda.Clear();
-        // Do NOT clear _characterToBandIcon — band icons persist across rounds like _characterToMessengerId,
-        // so contacts from previous rounds still show faction patches. Updated when players spawn again.
         _messengerPdas.Clear();
         _anonymousPseudonyms.Clear();
         _usedPseudonyms.Clear();

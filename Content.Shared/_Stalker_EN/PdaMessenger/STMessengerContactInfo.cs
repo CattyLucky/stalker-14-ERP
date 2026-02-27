@@ -3,7 +3,7 @@ using Robust.Shared.Serialization;
 namespace Content.Shared._Stalker_EN.PdaMessenger;
 
 /// <summary>
-/// Contact metadata sent to the client for rendering contact rows with faction patches and PDA IDs.
+/// Contact metadata sent to the client for rendering contact rows with PDA IDs.
 /// </summary>
 [Serializable, NetSerializable]
 public sealed class STMessengerContactInfo
@@ -18,15 +18,9 @@ public sealed class STMessengerContactInfo
     /// </summary>
     public readonly string? MessengerId;
 
-    /// <summary>
-    /// RSI state name in band.rsi for the contact's faction patch (e.g. "dolg", "stalker"), or null if unknown.
-    /// </summary>
-    public readonly string? BandIcon;
-
-    public STMessengerContactInfo(string characterName, string? messengerId, string? bandIcon)
+    public STMessengerContactInfo(string characterName, string? messengerId)
     {
         CharacterName = characterName;
         MessengerId = messengerId;
-        BandIcon = bandIcon;
     }
 }
