@@ -880,5 +880,16 @@
   id: 100
   time: '2026-02-27T22:41:47.672517+00:00'
   url: https://github.com/coolmankid12345/stalker-14-EN/pull/544
+- author: teecoding
+  changes:
+  - message: PDA messenger system with direct messages and public channels
+    type: Add
+  - message: PDA password lock to protect your device from others
+    type: Add
+  - message: PDAs no longer appear duplicated in personal stash
+    type: Fix
+  id: 101
+  time: '2026-02-27T22:44:20.110260+00:00'
+  url: https://github.com/coolmankid12345/stalker-14-EN/pull/546
 Name: Stalker
 Order: -1
