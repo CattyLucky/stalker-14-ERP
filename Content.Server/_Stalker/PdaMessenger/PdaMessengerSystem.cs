@@ -186,7 +186,18 @@ public sealed class PdaMessengerSystem : EntitySystem
                 continue;
             }
 
-            chats.Add(chat);
+            // stalker-en-changes: For DM chats, display the other person's name
+            if (chat.Receiver is not null && chat.Receiver == ownerName)
+            {
+                var displayChat = new PdaChat(chat.Sender ?? chat.Name, chat.Receiver, chat.Sender);
+                foreach (var msg in chat.Messages)
+                    displayChat.Messages.Add(msg);
+                chats.Add(displayChat);
+            }
+            else
+            {
+                chats.Add(chat);
+            }
         }
 
         var state = new MessengerUiState(chats);
